@@ -1,0 +1,51 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"cSpell.words": [
+			"AHBCLK",
+			"AUTOMATICOUTPUT",
+			"AUTORELOAD",
+			"BREAKPOLARITY",
+			"CLOCKDIVISION",
+			"CLOCKTYPE",
+			"COUNTERMODE",
+			"GPIOC",
+			"GPIOD",
+			"GPIOH",
+			"HCLK",
+			"hdma",
+			"HSICALIBRATION",
+			"htim",
+			"LOCKLEVEL",
+			"MASTERSLAVEMODE",
+			"NOPULL",
+			"NVIC",
+			"OCFAST",
+			"OCIDLESTATE",
+			"OCMODE",
+			"OCNIDLESTATE",
+			"OCNPOLARITY",
+			"OCPOLARITY",
+			"OSCILLATORTYPE",
+			"OSSI",
+			"OSSR",
+			"PCLK",
+			"PLLCLK",
+			"PLLM",
+			"PLLN",
+			"PLLP",
+			"PLLQ",
+			"PLLSOURCE",
+			"Prescaler",
+			"SYSCLK",
+			"SYSCLKSOURCE",
+			"Systick",
+			"TRGO",
+			"VOLTAGESCALING"
+		]
+	}
+}
