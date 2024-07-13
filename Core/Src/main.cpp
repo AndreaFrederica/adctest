@@ -5,6 +5,9 @@
 #include <string.h>
 #include <string>
 
+
+#include<EasyLed.h>
+
 #define UART_BUFFER_SIZE 256
 const char del[] = "\b \b";
 const char newline[] = "\r\n";
@@ -28,86 +31,12 @@ static void MX_UART4_Init(void);          // UART4 初始化函数
 
 /* Private user code ---------------------------------------------------------*/
 
-class Led {
-public:
-	Led()
-	    : gpio_group(nullptr)
-	    , gpio_pin(0) {
-		// 默认构造函数，确保在初始化之前 GPIO 变量被设置为有效值
-	}
 
-	void init(GPIO_TypeDef* group, uint16_t pin) {
-		gpio_group = group;
-		gpio_pin = pin;
-		// 初始化 GPIO
-		GPIO_InitTypeDef GPIO_InitStruct;
-		GPIO_InitStruct.Pin = gpio_pin;
-		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-		GPIO_InitStruct.Pull = GPIO_PULLUP;
-		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-		HAL_GPIO_Init(gpio_group, &GPIO_InitStruct);
-		switchOff();
-	}
 
-	void toggle() {
-		// 切换 LED 状态
-		HAL_GPIO_TogglePin(gpio_group, gpio_pin);
-	}
+EasyLed blue_led;
+EasyLed red_led;
 
-	void switchOn() {
-		// 打开 LED
-		HAL_GPIO_WritePin(gpio_group, gpio_pin, GPIO_PIN_RESET);
-	}
 
-	void switchOff() {
-		// 关闭 LED
-		HAL_GPIO_WritePin(gpio_group, gpio_pin, GPIO_PIN_SET);
-	}
-
-	void blink(uint32_t on_duration_ms = 0, uint32_t off_duration_ms = 0) {
-		// 闪烁 LED
-		switchOn();
-		if (on_duration_ms > 0) {
-			HAL_Delay(on_duration_ms);
-		}
-		switchOff();
-		if (off_duration_ms > 0) {
-			HAL_Delay(off_duration_ms);
-		}
-	}
-
-private:
-	GPIO_TypeDef* gpio_group;
-	uint16_t gpio_pin;
-};
-
-Led blue_led;
-Led red_led;
-
-#include <cstring> // For memcpy
-
-// void uart_input_it(uint8_t* buffer, size_t max_len) {
-// 	while (!uart_rx_complete) {
-// 		// Ensure reception is complete and there is data to copy
-// 		if (uart_rx_index > 0) {
-// 			// Determine the actual length to copy (minimum of uart_rx_length
-// 			// and max_len)
-// 			size_t copy_len =
-// 			    (uart_rx_index < max_len) ? uart_rx_index : max_len;
-
-// 			// Copy received data to buffer
-// 			std::memcpy(buffer, uart_rx_buffer, copy_len);
-
-// 			// Reset variables for next reception
-// 			uart_rx_index = 0;
-// 		} else {
-// 			// Handle case where reception is not complete or no data available
-// 			// (optional) You can choose to wait or return an error, depending
-// 			// on your application logic.
-// 		}
-// 	}
-// 	uart_rx_complete = 0;
-// }
 
 
 void uart_input_it(uint8_t *buffer, size_t max_len)
@@ -299,26 +228,6 @@ static void MX_GPIO_Init(void) {
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	HAL_GPIO_Init(GPIOD, &GPIO_InitStruct); // 初始化 GPIOD 引脚
 }
-// void LED_Init(void) {
-// 	__HAL_RCC_GPIOC_CLK_ENABLE();
-// 	__HAL_RCC_GPIOB_CLK_ENABLE();
-
-// 	GPIO_InitTypeDef GPIO_InitStruct;
-// 	GPIO_InitStruct.Pin = GPIO_PIN_5;
-// 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-// 	GPIO_InitStruct.Pull = GPIO_PULLUP;
-// 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-// 	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-
-// 	GPIO_InitTypeDef GPIO_InitStruct;
-// 	GPIO_InitStruct.Pin = GPIO_PIN_2;
-// 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-// 	GPIO_InitStruct.Pull = GPIO_PULLUP;
-// 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-// 	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-// 	HAL_GPIO_WritePin(GPIOC,GPIO_PIN_5,GPIO_PIN_RESET);
-// 	HAL_GPIO_WritePin(GPIOB,GPIO_PIN_2,GPIO_PIN_RESET);
-// }
 
 /**
  * @brief  This function is executed in case of error occurrence.
