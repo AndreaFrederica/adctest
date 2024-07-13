@@ -1,21 +1,14 @@
 #include "main.h"
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_rcc.h"
+#include <EasyLed.h>
+#include <EasyUART.h>
+#include <ErrorHandler.h>
 #include <cstring>
-#include <string.h>
 #include <string>
 
+extern void Error_Handler(void);
 
-#include<EasyLed.h>
-
-#define UART_BUFFER_SIZE 256
-const char del[] = "\b \b";
-const char newline[] = "\r\n";
-
-uint8_t uart_rx_buffer[UART_BUFFER_SIZE];
-volatile uint8_t uart_rx_char;
-volatile uint8_t uart_rx_index = 0;
-volatile uint8_t uart_rx_complete = 0;
 
 /* Private variables ---------------------------------------------------------*/
 TIM_HandleTypeDef htim8;        // TIM8 定时器句柄
@@ -27,32 +20,11 @@ extern "C" void SystemClock_Config(void); // 系统时钟配置函数
 static void MX_GPIO_Init(void);           // GPIO 初始化函数
 static void MX_DMA_Init(void);            // DMA 初始化函数
 static void MX_TIM8_Init(void);           // TIM8 初始化函数
-static void MX_UART4_Init(void);          // UART4 初始化函数
 
 /* Private user code ---------------------------------------------------------*/
 
-
-
 EasyLed blue_led;
 EasyLed red_led;
-
-
-
-
-void uart_input_it(uint8_t *buffer, size_t max_len)
-{
-    uart_rx_index = 0;
-    // Enable UART receive interrupt
-    // HAL_UART_Receive_IT(&huart4, &uart_rx_char, 1);
-    while (!uart_rx_complete)
-    {
-        // 等待接收完成
-    }
-    strncpy((char*)buffer,(char*)uart_rx_buffer, max_len); // 复制接收到的字符串到 buffer
-    buffer[max_len - 1] = '\0';               // 确保以 '\0' 结尾
-
-    uart_rx_complete = 0; // 重置接收完成标志
-}
 
 /**
  * @brief  The application entry point.
@@ -158,28 +130,6 @@ void Start_PWM(void) {
 }
 
 /**
- * @brief UART4 Initialization Function
- * @param None
- * @retval None
- */
-static void MX_UART4_Init(void) {
-
-	huart4.Instance = UART4;
-	huart4.Init.BaudRate = 115200;
-	huart4.Init.WordLength = UART_WORDLENGTH_8B;
-	huart4.Init.StopBits = UART_STOPBITS_1;
-	huart4.Init.Parity = UART_PARITY_NONE;
-	huart4.Init.Mode = UART_MODE_TX_RX;
-	huart4.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-	huart4.Init.OverSampling = UART_OVERSAMPLING_16;
-	if (HAL_UART_Init(&huart4) != HAL_OK) {
-		Error_Handler(); // 如果初始化失败，调用错误处理函数
-	}
-	// 启用UART接收中断
-	HAL_UART_Receive_IT(&huart4, (uint8_t*)&uart_rx_char, 1);
-}
-
-/**
  * Enable DMA controller clock
  */
 static void MX_DMA_Init(void) {
@@ -229,19 +179,7 @@ static void MX_GPIO_Init(void) {
 	HAL_GPIO_Init(GPIOD, &GPIO_InitStruct); // 初始化 GPIOD 引脚
 }
 
-/**
- * @brief  This function is executed in case of error occurrence.
- * @retval None
- */
-extern "C" void Error_Handler(void) {
-	/* USER CODE BEGIN Error_Handler_Debug */
-	/* User can add his own implementation to report the HAL error return state
-	 */
-	__disable_irq(); // 禁用中断
-	while (1) {
-	}
-	/* USER CODE END Error_Handler_Debug */
-}
+
 
 #ifdef USE_FULL_ASSERT
 /**
@@ -260,70 +198,6 @@ void assert_failed(uint8_t* file, uint32_t line) {
 }
 #endif /* USE_FULL_ASSERT */
 
-extern "C" void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
-	if (huart->Instance == UART4) {
-		blue_led.blink();
-		switch (uart_rx_char) {
-		case '\r':
-			HAL_UART_Transmit(huart, (uint8_t*)newline, strlen(newline),
-			                  HAL_MAX_DELAY);
-			uart_rx_buffer[uart_rx_index] = '\0';
-			uart_rx_complete = 1;
-			uart_rx_index = 0;
-			break;
-
-		case '\b':
-		case 127:
-			if (uart_rx_index > 0) {
-				uart_rx_index--;
-				HAL_UART_Transmit(huart, (uint8_t*)del, strlen(del),
-				                  HAL_MAX_DELAY);
-			}
-			break;
-
-		default:
-			if (uart_rx_index >= UART_BUFFER_SIZE - 1) {
-				uart_rx_buffer[uart_rx_index] = '\0';
-				uart_rx_complete = 1;
-				uart_rx_index = 0;
-			} else {
-				HAL_UART_Transmit(huart, (uint8_t*)&uart_rx_char, 1,
-				                  HAL_MAX_DELAY);
-				uart_rx_buffer[uart_rx_index] = uart_rx_char;
-				uart_rx_index++;
-			}
-			break;
-		}
-		HAL_UART_Receive_IT(&huart4, (uint8_t*)&uart_rx_char, 1);
-	}
-}
-
-void UART_SendString(UART_HandleTypeDef* huart, uint8_t* data) {
-	HAL_UART_Transmit(huart, data, strlen((char*)data), HAL_MAX_DELAY);
-	red_led.blink();
-}
-
-void uart_print(const uint8_t* message,
-                const uint8_t* end = (const uint8_t*)newline,
-                UART_HandleTypeDef* huart = &huart4) {
-	UART_SendString(huart, (uint8_t*)message);
-	UART_SendString(huart, (uint8_t*)end);
-}
-
-void uart_print(const char* message,
-                const char* end = "\r\n",
-                UART_HandleTypeDef* huart = &huart4) {
-	UART_SendString(huart, (uint8_t*)message);
-	UART_SendString(huart, (uint8_t*)end);
-}
-
-void uart_print(const std::string& message,
-                const std::string& end = "\r\n",
-                UART_HandleTypeDef* huart = &huart4) {
-	UART_SendString(huart, (uint8_t*)message.c_str());
-	UART_SendString(huart, (uint8_t*)end.c_str());
-}
-
 extern "C" int main(void) {
 
 	HAL_Init(); // 初始化 HAL 库
@@ -341,10 +215,10 @@ extern "C" int main(void) {
 	uart_print("hello world");
 
 	while (1) {
-		uart_print(".");
+		// uart_print(".");
 
 		// red_led.switchOn();
-		HAL_Delay(10);
+		// HAL_Delay(10);
 
 		// red_led.switchOff();
 		// HAL_Delay(100);
@@ -353,5 +227,14 @@ extern "C" int main(void) {
 		uart_input_it(input_buffer, sizeof(input_buffer));
 		uart_print("Received: "); // 打印接收到的数据
 		uart_print(input_buffer);
+
+		// 检查是否包含 "reboot"
+		if (strstr((char*)input_buffer, "reboot") != nullptr) {
+			uart_print("Rebooting MCU...");
+			HAL_Delay(100); // 等待一段时间确保消息发送完成
+
+			// 执行 MCU 重启操作，可以通过适当的函数实现
+			NVIC_SystemReset();
+		}
 	}
 }
