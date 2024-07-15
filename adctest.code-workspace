@@ -13,6 +13,7 @@
 			"CLOCKDIVISION",
 			"CLOCKTYPE",
 			"COUNTERMODE",
+			"Cplt",
 			"GPIOC",
 			"GPIOD",
 			"GPIOH",

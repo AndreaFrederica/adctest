@@ -9,7 +9,6 @@
 
 extern void Error_Handler(void);
 
-
 /* Private variables ---------------------------------------------------------*/
 TIM_HandleTypeDef htim8;        // TIM8 定时器句柄
 DMA_HandleTypeDef hdma_tim8_up; // TIM8 DMA 通道句柄
@@ -92,12 +91,14 @@ static void MX_TIM8_Init(void) {
 	htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
 	if (HAL_TIM_PWM_Init(&htim8) != HAL_OK) {
 		Error_Handler(); // 如果初始化失败，调用错误处理函数
+		uart_log_error("tim8 init pass1 start failed");
 	}
 	sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
 	sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
 	if (HAL_TIMEx_MasterConfigSynchronization(&htim8, &sMasterConfig) !=
 	    HAL_OK) {
 		Error_Handler(); // 如果配置失败，调用错误处理函数
+		uart_log_error("tim8 init pass2 start failed");
 	}
 	sConfigOC.OCMode = TIM_OCMODE_PWM2;
 	sConfigOC.Pulse = 5;
@@ -109,6 +110,7 @@ static void MX_TIM8_Init(void) {
 	if (HAL_TIM_PWM_ConfigChannel(&htim8, &sConfigOC, TIM_CHANNEL_1) !=
 	    HAL_OK) {
 		Error_Handler(); // 如果配置失败，调用错误处理函数
+		uart_print("Error | tim8 init pass3 start failed");
 	}
 	sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
 	sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
@@ -120,13 +122,20 @@ static void MX_TIM8_Init(void) {
 	if (HAL_TIMEx_ConfigBreakDeadTime(&htim8, &sBreakDeadTimeConfig) !=
 	    HAL_OK) {
 		Error_Handler(); // 如果配置失败，调用错误处理函数
+		uart_log_error("tim8 init pass4 start failed");
 	}
 
 	HAL_TIM_MspPostInit(&htim8); // TIM8 后初始化
 }
 
 void Start_PWM(void) {
+	__HAL_RCC_TIM8_CLK_ENABLE();
 	HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_1); // 启动TIM8通道1的PWM输出
+	if (HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_1) != HAL_OK) {
+	uart_log_error("pwm start failed");
+	}else{
+		uart_log_success("pwm start succeed");
+	}
 }
 
 /**
@@ -155,6 +164,7 @@ static void MX_GPIO_Init(void) {
 	/* GPIO Ports Clock Enable */
 	__HAL_RCC_GPIOH_CLK_ENABLE(); // 启用 GPIOH 时钟
 	__HAL_RCC_GPIOA_CLK_ENABLE(); // 启用 GPIOA 时钟
+	__HAL_RCC_GPIOB_CLK_ENABLE(); // 启用 GPIOA 时钟
 	__HAL_RCC_GPIOD_CLK_ENABLE(); // 启用 GPIOD 时钟
 	__HAL_RCC_GPIOC_CLK_ENABLE(); // 启用 GPIOC 时钟
 
@@ -162,7 +172,7 @@ static void MX_GPIO_Init(void) {
 	GPIO_InitStruct.Pin = GPIO_PIN_5;
 	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
 	GPIO_InitStruct.Alternate = GPIO_AF3_TIM8;
 	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct); //! 初始化 PA5 引脚为 TIM8 PWM 输出
 
@@ -178,8 +188,6 @@ static void MX_GPIO_Init(void) {
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	HAL_GPIO_Init(GPIOD, &GPIO_InitStruct); // 初始化 GPIOD 引脚
 }
-
-
 
 #ifdef USE_FULL_ASSERT
 /**
@@ -198,6 +206,11 @@ void assert_failed(uint8_t* file, uint32_t line) {
 }
 #endif /* USE_FULL_ASSERT */
 
+void uartRxCallbackStart() { red_led.switchOn(); }
+void uartRxCallbackEnd() { red_led.switchOff(); }
+void uartTxCallbackStart() { blue_led.switchOn(); }
+void uartTxCallbackEnd() { blue_led.switchOff(); }
+
 extern "C" int main(void) {
 
 	HAL_Init(); // 初始化 HAL 库
@@ -208,10 +221,21 @@ extern "C" int main(void) {
 	MX_GPIO_Init(); // 初始化 GPIO
 	red_led.init(GPIOC, GPIO_PIN_5);
 	blue_led.init(GPIOB, GPIO_PIN_2);
-	MX_DMA_Init();   // 初始化 DMA
-	MX_TIM8_Init();  // 初始化 TIM8
+
+	usedRxCallbackStart = uartRxCallbackStart;
+	usedRxCallbackEnd = uartRxCallbackEnd;
+	usedTxCallbackStart = uartTxCallbackStart;
+	usedTxCallbackEnd = uartTxCallbackEnd;
 	MX_UART4_Init(); // 初始化 UART4
-	Start_PWM();     //! 初始化PA5上的PWM输出
+	uart_log_info("hello stm32f407");
+	uart_log_info("init dma");
+	MX_DMA_Init(); // 初始化 DMA
+	uart_log_info("init tim8");
+	MX_TIM8_Init(); // 初始化 TIM8
+	uart_log_info("init pwm output");
+	Start_PWM(); //! 初始化PA5上的PWM输出
+
+	uart_log_success("init done");
 	uart_print("hello world");
 
 	while (1) {
@@ -230,11 +254,13 @@ extern "C" int main(void) {
 
 		// 检查是否包含 "reboot"
 		if (strstr((char*)input_buffer, "reboot") != nullptr) {
-			uart_print("Rebooting MCU...");
-			HAL_Delay(100); // 等待一段时间确保消息发送完成
+			uart_log_warn("Rebooting MCU...");
+			blue_led.switchOn();
+			HAL_Delay(100);
 
 			// 执行 MCU 重启操作，可以通过适当的函数实现
 			NVIC_SystemReset();
+		} else {
 		}
 	}
 }

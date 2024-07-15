@@ -12,6 +12,33 @@
 extern const char del[];
 extern const char newline[];
 
+
+#define NONE                 "\e[0m"
+#define BLACK                "\e[0;30m"
+#define L_BLACK              "\e[1;30m"
+#define RED                  "\e[0;31m"
+#define L_RED                "\e[1;31m"
+#define GREEN                "\e[0;32m"
+#define L_GREEN              "\e[1;32m"
+#define BROWN                "\e[0;33m"
+#define YELLOW               "\e[1;33m"
+#define BLUE                 "\e[0;34m"
+#define L_BLUE               "\e[1;34m"
+#define PURPLE               "\e[0;35m"
+#define L_PURPLE             "\e[1;35m"
+#define CYAN                 "\e[0;36m"
+#define L_CYAN               "\e[1;36m"
+#define GRAY                 "\e[0;37m"
+#define WHITE                "\e[1;37m"
+ 
+#define BOLD                 "\e[1m"
+#define UNDERLINE            "\e[4m"
+#define BLINK                "\e[5m"
+#define REVERSE              "\e[7m"
+#define HIDE                 "\e[8m"
+#define CLEAR                "\e[2J"
+#define CLRLINE              "\r\e[K" //or "\e[1K\r"
+
 extern UART_HandleTypeDef huart4; // 声明为 extern
 
 
@@ -29,5 +56,24 @@ void uart_print(const char* message, const char* end = "\r\n", UART_HandleTypeDe
 void uart_print(const std::string& message, const std::string& end = "\r\n", UART_HandleTypeDef* huart = &huart4);
 void uart_input_it(uint8_t *buffer, size_t max_len);
 void MX_UART4_Init(void);
+
+void uart_log_trace(const char* message, const char* end = "\r\n", UART_HandleTypeDef* huart = &huart4);
+void uart_log_debug(const char* message, const char* end = "\r\n", UART_HandleTypeDef* huart = &huart4);
+void uart_log_info(const char* message, const char* end = "\r\n", UART_HandleTypeDef* huart = &huart4);
+void uart_log_warn(const char* message, const char* end = "\r\n", UART_HandleTypeDef* huart = &huart4);
+void uart_log_error(const char* message, const char* end = "\r\n", UART_HandleTypeDef* huart = &huart4);
+void uart_log_success(const char* message, const char* end = "\r\n", UART_HandleTypeDef* huart = &huart4);
+
+// 函数指针类型和默认实现
+typedef void (*FunctionType)();
+void defaultRxCallbackStart();
+void defaultRxCallbackEnd();
+void defaultTxCallbackStart();
+void defaultTxCallbackEnd();
+
+extern FunctionType usedRxCallbackStart;
+extern FunctionType usedRxCallbackEnd;
+extern FunctionType usedTxCallbackStart;
+extern FunctionType usedTxCallbackEnd;
 
 #endif // EASYUART_H
