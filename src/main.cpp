@@ -124,18 +124,20 @@ static void MX_TIM8_Init(void) {
 		Error_Handler(); // 如果配置失败，调用错误处理函数
 		uart_log_error("tim8 init pass4 start failed");
 	}
-
+	__HAL_RCC_TIM8_CLK_ENABLE();
 	HAL_TIM_MspPostInit(&htim8); // TIM8 后初始化
 }
 
 void Start_PWM(void) {
-	__HAL_RCC_TIM8_CLK_ENABLE();
-	HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_1); // 启动TIM8通道1的PWM输出
-	if (HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_1) != HAL_OK) {
-	uart_log_error("pwm start failed");
-	}else{
+	// HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_1); // 启动TIM8通道1的PWM输出
+	//? 互补输出和PWM输出是两个输出信号
+	if (HAL_TIMEx_PWMN_Start(&htim8, TIM_CHANNEL_1) != HAL_OK) {
+		//! PA5是互补输出
+		uart_log_error("pwm start failed");
+	} else {
 		uart_log_success("pwm start succeed");
 	}
+	// TIM8->CCR1 = 16383;
 }
 
 /**
@@ -168,13 +170,15 @@ static void MX_GPIO_Init(void) {
 	__HAL_RCC_GPIOD_CLK_ENABLE(); // 启用 GPIOD 时钟
 	__HAL_RCC_GPIOC_CLK_ENABLE(); // 启用 GPIOC 时钟
 
-	/* Configure GPIO pin: PA5 */
-	GPIO_InitStruct.Pin = GPIO_PIN_5;
-	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
-	GPIO_InitStruct.Alternate = GPIO_AF3_TIM8;
-	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct); //! 初始化 PA5 引脚为 TIM8 PWM 输出
+	// /* Configure GPIO pin: PA5 */
+	// GPIO_InitStruct.Pin = GPIO_PIN_5;
+	// GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+	// GPIO_InitStruct.Pull = GPIO_NOPULL;
+	// GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
+	// GPIO_InitStruct.Alternate = GPIO_AF3_TIM8;
+	// HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+	//! 初始化 PA5 引脚为 TIM8 PWM输出
+	//! 相关初始化代码在HAL中已经存在
 
 	/*Configure GPIO pins : PD8 PD9 PD10 PD11
 	                         PD12 PD0 PD1 PD2
@@ -239,14 +243,6 @@ extern "C" int main(void) {
 	uart_print("hello world");
 
 	while (1) {
-		// uart_print(".");
-
-		// red_led.switchOn();
-		// HAL_Delay(10);
-
-		// red_led.switchOff();
-		// HAL_Delay(100);
-
 		uint8_t input_buffer[100];
 		uart_input_it(input_buffer, sizeof(input_buffer));
 		uart_print("Received: "); // 打印接收到的数据

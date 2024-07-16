@@ -18,10 +18,13 @@ target_include_directories(stm32cubemx INTERFACE
     ../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy
     ../../Drivers/CMSIS/Device/ST/STM32F4xx/Include
     ../../Drivers/CMSIS/Include
+    ../../Lib/EasyLed
+    ../../Lib/EasyUART
+    ../../Lib/ErrorHandler
 )
 
 target_sources(stm32cubemx INTERFACE
-    ../../Core/Src/main.c
+    ../../Core/Src/main.cpp
     ../../Core/Src/stm32f4xx_it.c
     ../../Core/Src/stm32f4xx_hal_msp.c
     ../../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c
