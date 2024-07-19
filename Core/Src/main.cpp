@@ -4,6 +4,7 @@
 #include <EasyLed.h>
 #include <EasyUART.h>
 #include <ErrorHandler.h>
+#include <cmath>
 #include <cstring>
 #include <string>
 
@@ -22,8 +23,12 @@ static void MX_TIM8_Init(void);           // TIM8 初始化函数
 
 /* Private user code ---------------------------------------------------------*/
 
+const int sys_frequency = 144; //? mHz
+
 EasyLed blue_led;
 EasyLed red_led;
+int tim8_set_prescaler = 1000; //? 定时器的预分频器
+int tim8_set_period = 10;      //? 9+1 定时器的周期
 
 /**
  * @brief  The application entry point.
@@ -51,7 +56,7 @@ extern "C" void SystemClock_Config(void) {
 	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
 	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
 	RCC_OscInitStruct.PLL.PLLM = 8;
-	RCC_OscInitStruct.PLL.PLLN = 144;
+	RCC_OscInitStruct.PLL.PLLN = sys_frequency;
 	RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
 	RCC_OscInitStruct.PLL.PLLQ = 4;
 	if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
@@ -83,9 +88,11 @@ static void MX_TIM8_Init(void) {
 	TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig = {0};
 
 	htim8.Instance = TIM8;
-	htim8.Init.Prescaler = 0;
+	htim8.Init.Prescaler = tim8_set_prescaler; //! Default:1000 -> 14.5kHz
+	// htim8.Init.Prescaler = 0;
+
 	htim8.Init.CounterMode = TIM_COUNTERMODE_UP;
-	htim8.Init.Period = 10 - 1;
+	htim8.Init.Period = tim8_set_period; //? (10-1)
 	htim8.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
 	htim8.Init.RepetitionCounter = 0;
 	htim8.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
@@ -215,6 +222,25 @@ void uartRxCallbackEnd() { red_led.switchOff(); }
 void uartTxCallbackStart() { blue_led.switchOn(); }
 void uartTxCallbackEnd() { blue_led.switchOff(); }
 
+u_int16_t ad9020Read() {
+	uint16_t data = 0;
+    data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_0)  << 0;
+    data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_1)  << 1;
+    data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_2)  << 2;
+    data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_3)  << 3;
+    data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_4)  << 4;
+    data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_5)  << 5;
+    data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_6)  << 6;
+    data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_7)  << 7;
+    data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_8)  << 8;
+    data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_9)  << 9;
+    data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_10) << 10;
+    data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_11) << 11;
+	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_12) << 12;
+	return data;
+}
+
+
 extern "C" int main(void) {
 
 	HAL_Init(); // 初始化 HAL 库
@@ -231,6 +257,7 @@ extern "C" int main(void) {
 	usedTxCallbackStart = uartTxCallbackStart;
 	usedTxCallbackEnd = uartTxCallbackEnd;
 	MX_UART4_Init(); // 初始化 UART4
+	uart_print("\n");
 	uart_log_info("hello stm32f407");
 	uart_log_info("init dma");
 	MX_DMA_Init(); // 初始化 DMA
@@ -243,20 +270,94 @@ extern "C" int main(void) {
 	uart_print("hello world");
 
 	while (1) {
-		uint8_t input_buffer[100];
-		uart_input_it(input_buffer, sizeof(input_buffer));
-		uart_print("Received: "); // 打印接收到的数据
-		uart_print(input_buffer);
+		if (uart_ad9220_debug == false) {
+			uint8_t input_buffer[100];
+			uart_print("new tim8_set_period:", "");
+			uart_input_it(input_buffer, sizeof(input_buffer));
+			uart_print("Received: "); // 打印接收到的数据
+			uart_print(input_buffer);
 
-		// 检查是否包含 "reboot"
-		if (strstr((char*)input_buffer, "reboot") != nullptr) {
-			uart_log_warn("Rebooting MCU...");
-			blue_led.switchOn();
-			HAL_Delay(100);
+			// 检查是否包含 "reboot"
+			if (strstr((char*)input_buffer, "reboot") != nullptr) {
+				reboot();
+			}
+			char number_buffer[100] = {0}; // 用来存储提取出的数字
+			getNumberChar(input_buffer, number_buffer);
 
-			// 执行 MCU 重启操作，可以通过适当的函数实现
-			NVIC_SystemReset();
-		} else {
+			uart_print("Numbers Extracted: ");
+			uart_print(number_buffer);
+
+			//? 将提取的数字转换为 int 类型
+			int extracted_number = atoi(number_buffer);
+			// uart_print("Converted to int: " +
+			// std::to_string(extracted_number));
+			tim8_set_period = extracted_number; //! 设置pwm频率
+			//? 使用公式 y = sys_frequency / （tim8_set_period x
+			//tim8_set_prescaler+1） 计算预计的PWM频率
+			double frequency = 0;
+			frequency = ((sys_frequency * 1000000) /
+			             ((tim8_set_prescaler + 1) * tim8_set_period)) /
+			            1000;
+			uart_print("Calculated Frequency: " + doubleToString(frequency, 4) +
+			           " kHz");
+
+			uart_print("new tim8_set_prescaler:", "");
+			uart_input_it(input_buffer, sizeof(input_buffer));
+			uart_print("Received: "); // 打印接收到的数据
+			uart_print(input_buffer);
+
+			// 检查是否包含 "reboot"
+			if (strstr((char*)input_buffer, "reboot") != nullptr) {
+				reboot();
+			}
+			number_buffer[100] = {0}; // 用来存储提取出的数字
+			getNumberChar(input_buffer, number_buffer);
+
+			uart_print("Numbers Extracted: ");
+			uart_print(number_buffer);
+
+			//? 将提取的数字转换为 int 类型
+			extracted_number = atoi(number_buffer);
+			// uart_print("Converted to int: " +
+			// std::to_string(extracted_number));
+			tim8_set_prescaler = extracted_number; //! 设置pwm频率
+			//? 使用公式 y = sys_frequency / （tim8_set_period x
+			//tim8_set_prescaler+1） 计算预计的PWM频率 double frequency = 0;
+			frequency = ((sys_frequency * 1000000) /
+			             ((tim8_set_prescaler + 1) * tim8_set_period)) /
+			            1000;
+			uart_print("Calculated Frequency: " + doubleToString(frequency, 4) +
+			           " kHz");
+
+			MX_TIM8_Init();
+			Start_PWM();
+		}else{
+			uint16_t number = ad9020Read();
+			char str[6];
+			ConvertUint16ToString(number, str);
+			uart_print(str);
 		}
 	}
+}
+
+void getNumberChar(uint8_t input_buffer[100], char number_buffer[100]) {
+	int j = 0;
+	for (int i = 0; i < sizeof(input_buffer); i++) {
+		if (isdigit(input_buffer[i])) {
+			number_buffer[j++] = input_buffer[i];
+		}
+	}
+}
+
+void reboot() {
+	uart_log_warn("Rebooting MCU...");
+	blue_led.switchOn();
+	HAL_Delay(100);
+
+	// 执行 MCU 重启操作，可以通过适当的函数实现
+	NVIC_SystemReset();
+}
+
+void ConvertUint16ToString(uint16_t num, char *str) {
+    sprintf(str, "%u", num); // 将 uint16_t 转换为字符串
 }

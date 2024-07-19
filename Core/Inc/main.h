@@ -69,3 +69,9 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 #endif
 
 #endif /* __MAIN_H */
+
+void reboot();
+
+void getNumberChar(uint8_t input_buffer[100], char number_buffer[100]);
+void ConvertUint16ToString(uint16_t num, char *str);
+
