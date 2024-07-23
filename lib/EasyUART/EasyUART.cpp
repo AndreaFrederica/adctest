@@ -249,66 +249,66 @@ void uart_log_trace(const char* message,
                     const char* end,
                     UART_HandleTypeDef* huart) {
 	usedTxCallbackStart();
-	UART_SendString(huart, (uint8_t*)GRAY);
+	UART_SendString(huart, (uint8_t*)UART_GRAY);
 	UART_SendString(huart, (uint8_t*)"Trace  | ");
 	UART_SendString(huart, (uint8_t*)message);
 	UART_SendString(huart, (uint8_t*)end);
-	UART_SendString(huart, (uint8_t*)NONE);
+	UART_SendString(huart, (uint8_t*)UART_NONE);
 	usedTxCallbackEnd();
 }
 void uart_log_debug(const char* message,
                     const char* end,
                     UART_HandleTypeDef* huart) {
 	usedTxCallbackStart();
-	UART_SendString(huart, (uint8_t*)BLUE);
+	UART_SendString(huart, (uint8_t*)UART_BLUE);
 	UART_SendString(huart, (uint8_t*)"Debug   | ");
 	UART_SendString(huart, (uint8_t*)message);
 	UART_SendString(huart, (uint8_t*)end);
-	UART_SendString(huart, (uint8_t*)NONE);
+	UART_SendString(huart, (uint8_t*)UART_NONE);
 	usedTxCallbackEnd();
 }
 void uart_log_info(const char* message,
                    const char* end,
                    UART_HandleTypeDef* huart) {
 	usedTxCallbackStart();
-	UART_SendString(huart, (uint8_t*)WHITE);
+	UART_SendString(huart, (uint8_t*)UART_WHITE);
 	UART_SendString(huart, (uint8_t*)"Info    | ");
 	UART_SendString(huart, (uint8_t*)message);
 	UART_SendString(huart, (uint8_t*)end);
-	UART_SendString(huart, (uint8_t*)NONE);
+	UART_SendString(huart, (uint8_t*)UART_NONE);
 	usedTxCallbackEnd();
 }
 void uart_log_warn(const char* message,
                    const char* end,
                    UART_HandleTypeDef* huart) {
 	usedTxCallbackStart();
-	UART_SendString(huart, (uint8_t*)BROWN);
+	UART_SendString(huart, (uint8_t*)UART_BROWN);
 	UART_SendString(huart, (uint8_t*)"Warn    | ");
 	UART_SendString(huart, (uint8_t*)message);
 	UART_SendString(huart, (uint8_t*)end);
-	UART_SendString(huart, (uint8_t*)NONE);
+	UART_SendString(huart, (uint8_t*)UART_NONE);
 	usedTxCallbackEnd();
 }
 void uart_log_error(const char* message,
                     const char* end,
                     UART_HandleTypeDef* huart) {
 	usedTxCallbackStart();
-	UART_SendString(huart, (uint8_t*)RED);
+	UART_SendString(huart, (uint8_t*)UART_RED);
 	UART_SendString(huart, (uint8_t*)"Error   | ");
 	UART_SendString(huart, (uint8_t*)message);
 	UART_SendString(huart, (uint8_t*)end);
-	UART_SendString(huart, (uint8_t*)NONE);
+	UART_SendString(huart, (uint8_t*)UART_NONE);
 	usedTxCallbackEnd();
 }
 void uart_log_success(const char* message,
                       const char* end,
                       UART_HandleTypeDef* huart) {
 	usedTxCallbackStart();
-	UART_SendString(huart, (uint8_t*)GREEN);
+	UART_SendString(huart, (uint8_t*)UART_GREEN);
 	UART_SendString(huart, (uint8_t*)"Success | ");
 	UART_SendString(huart, (uint8_t*)message);
 	UART_SendString(huart, (uint8_t*)end);
-	UART_SendString(huart, (uint8_t*)NONE);
+	UART_SendString(huart, (uint8_t*)UART_NONE);
 	usedTxCallbackEnd();
 }
 

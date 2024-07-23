@@ -3,6 +3,9 @@
 #include "stm32f4xx_hal_rcc.h"
 #include <EasyLed.h>
 #include <EasyUART.h>
+#include <EasySPI.h>
+#include <EasyLCD.h>
+#include <GUI.h>
 #include <ErrorHandler.h>
 #include <cmath>
 #include <cstring>
@@ -224,21 +227,57 @@ void uartTxCallbackEnd() { blue_led.switchOff(); }
 
 u_int16_t ad9020Read() {
 	uint16_t data = 0;
-    data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_0)  << 0;
-    data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_1)  << 1;
-    data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_2)  << 2;
-    data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_3)  << 3;
-    data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_4)  << 4;
-    data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_5)  << 5;
-    data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_6)  << 6;
-    data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_7)  << 7;
-    data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_8)  << 8;
-    data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_9)  << 9;
-    data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_10) << 10;
-    data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_11) << 11;
+	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_0) << 0;
+	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_1) << 1;
+	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_2) << 2;
+	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_3) << 3;
+	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_4) << 4;
+	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_5) << 5;
+	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_6) << 6;
+	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_7) << 7;
+	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_8) << 8;
+	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_9) << 9;
+	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_10) << 10;
+	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_11) << 11;
 	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_12) << 12;
 	return data;
 }
+
+
+
+
+
+
+void DrawTestPage(uint8_t *str)
+{
+//绘制固定栏up
+LCD_Clear(BLACK);
+LCD_Fill(0,0,lcddev.width,20,BLUE);
+//绘制固定栏down
+//LCD_Fill(0,lcddev.height-20,lcddev.width,lcddev.height,BLUE);
+POINT_COLOR=WHITE;
+Gui_StrCenter(0,2,WHITE,BLUE,str,16,1);//居中显示
+//Gui_StrCenter(0,lcddev.height-18,WHITE,BLUE,(uint8_t *)"http://www.lcdwiki.com",16,1);//居中显示
+}
+void DrawTestPage(char *str)
+{
+//绘制固定栏up
+LCD_Clear(BLACK);
+LCD_Fill(0,0,lcddev.width,20,BLUE);
+//绘制固定栏down
+//LCD_Fill(0,lcddev.height-20,lcddev.width,lcddev.height,BLUE);
+POINT_COLOR=WHITE;
+Gui_StrCenter(0,2,WHITE,BLUE,(uint8_t *)str,16,1);//居中显示
+//Gui_StrCenter(0,lcddev.height-18,WHITE,BLUE,(uint8_t *)"http://www.lcdwiki.com",16,1);//居中显示
+}
+
+
+
+
+
+
+
+
 
 
 extern "C" int main(void) {
@@ -259,6 +298,15 @@ extern "C" int main(void) {
 	MX_UART4_Init(); // 初始化 UART4
 	uart_print("\n");
 	uart_log_info("hello stm32f407");
+
+
+	uart_log_info("init spi1");
+	SPI1_Init_PB();
+	uart_log_info("init LCD");
+	LCD_Init();
+	DrawTestPage("LCD Test");
+
+
 	uart_log_info("init dma");
 	MX_DMA_Init(); // 初始化 DMA
 	uart_log_info("init tim8");
@@ -293,7 +341,7 @@ extern "C" int main(void) {
 			// std::to_string(extracted_number));
 			tim8_set_period = extracted_number; //! 设置pwm频率
 			//? 使用公式 y = sys_frequency / （tim8_set_period x
-			//tim8_set_prescaler+1） 计算预计的PWM频率
+			// tim8_set_prescaler+1） 计算预计的PWM频率
 			double frequency = 0;
 			frequency = ((sys_frequency * 1000000) /
 			             ((tim8_set_prescaler + 1) * tim8_set_period)) /
@@ -310,7 +358,6 @@ extern "C" int main(void) {
 			if (strstr((char*)input_buffer, "reboot") != nullptr) {
 				reboot();
 			}
-			number_buffer[100] = {0}; // 用来存储提取出的数字
 			getNumberChar(input_buffer, number_buffer);
 
 			uart_print("Numbers Extracted: ");
@@ -322,7 +369,7 @@ extern "C" int main(void) {
 			// std::to_string(extracted_number));
 			tim8_set_prescaler = extracted_number; //! 设置pwm频率
 			//? 使用公式 y = sys_frequency / （tim8_set_period x
-			//tim8_set_prescaler+1） 计算预计的PWM频率 double frequency = 0;
+			// tim8_set_prescaler+1） 计算预计的PWM频率 double frequency = 0;
 			frequency = ((sys_frequency * 1000000) /
 			             ((tim8_set_prescaler + 1) * tim8_set_period)) /
 			            1000;
@@ -331,7 +378,7 @@ extern "C" int main(void) {
 
 			MX_TIM8_Init();
 			Start_PWM();
-		}else{
+		} else {
 			uint16_t number = ad9020Read();
 			char str[6];
 			ConvertUint16ToString(number, str);
@@ -342,7 +389,10 @@ extern "C" int main(void) {
 
 void getNumberChar(uint8_t input_buffer[100], char number_buffer[100]) {
 	int j = 0;
-	for (int i = 0; i < sizeof(input_buffer); i++) {
+	    for (int i = 0; i < 100; i++) {
+        number_buffer[i] = 0;
+    }
+	for (int i = 0; i < 100; i++) {
 		if (isdigit(input_buffer[i])) {
 			number_buffer[j++] = input_buffer[i];
 		}
@@ -358,6 +408,6 @@ void reboot() {
 	NVIC_SystemReset();
 }
 
-void ConvertUint16ToString(uint16_t num, char *str) {
-    sprintf(str, "%u", num); // 将 uint16_t 转换为字符串
+void ConvertUint16ToString(uint16_t num, char* str) {
+	sprintf(str, "%u", num); // 将 uint16_t 转换为字符串
 }
