@@ -21,6 +21,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include <ErrorHandler.h>
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
