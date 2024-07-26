@@ -1,15 +1,16 @@
 #include "main.h"
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_rcc.h"
-#include <EasyLed.h>
-#include <EasyUART.h>
-#include <EasySPI.h>
 #include <EasyLCD.h>
-#include <GUI.h>
+#include <EasyLed.h>
+#include <EasySPI.h>
+#include <EasyUART.h>
 #include <ErrorHandler.h>
+#include <GUI.h>
 #include <cmath>
 #include <cstring>
 #include <string>
+#include <AndreaUI.h>
 
 extern void Error_Handler(void);
 
@@ -245,41 +246,6 @@ u_int16_t ad9020Read() {
 
 
 
-
-
-
-void DrawTestPage(uint8_t *str)
-{
-//绘制固定栏up
-LCD_Clear(BLACK);
-LCD_Fill(0,0,lcddev.width,20,BLUE);
-//绘制固定栏down
-//LCD_Fill(0,lcddev.height-20,lcddev.width,lcddev.height,BLUE);
-POINT_COLOR=WHITE;
-Gui_StrCenter(0,2,WHITE,BLUE,str,16,1);//居中显示
-//Gui_StrCenter(0,lcddev.height-18,WHITE,BLUE,(uint8_t *)"http://www.lcdwiki.com",16,1);//居中显示
-}
-void DrawTestPage(char *str)
-{
-//绘制固定栏up
-LCD_Clear(BLACK);
-LCD_Fill(0,0,lcddev.width,20,BLUE);
-//绘制固定栏down
-//LCD_Fill(0,lcddev.height-20,lcddev.width,lcddev.height,BLUE);
-POINT_COLOR=WHITE;
-Gui_StrCenter(0,2,WHITE,BLUE,(uint8_t *)str,16,1);//居中显示
-//Gui_StrCenter(0,lcddev.height-18,WHITE,BLUE,(uint8_t *)"http://www.lcdwiki.com",16,1);//居中显示
-}
-
-
-
-
-
-
-
-
-
-
 extern "C" int main(void) {
 
 	HAL_Init(); // 初始化 HAL 库
@@ -299,23 +265,79 @@ extern "C" int main(void) {
 	uart_print("\n");
 	uart_log_info("hello stm32f407");
 
-
 	uart_log_info("init spi1");
 	SPI1_Init_PB();
 	uart_log_info("init LCD");
-	LCD_Init();
-	DrawTestPage("LCD Test");
+	LCD_Init(BLACK);
+	// DrawTestPage("LCD Test");
 
+	// 初始化缓冲区
+	InitializeBuffer(buffer1, ' ', WHITE, BLACK);
+	InitializeBuffer(buffer2, ' ', WHITE, BLACK);
+
+	// DisplayAlphabet();
+	//  初始化 lcd_print 环境
+	//lcd_print_init(WHITE, BLACK, SCROLL_UP);
+	lcd_print_init(WHITE, BLACK, RETURN_TO_ORIGIN);
+
+	// 使用 lcd_print 打印文本
+	lcd_print_basic(
+	    "Hello, World!\nThis is a test of the lcd_print function.\n");
+
+	// 切换缓冲区并更新屏幕
+	// SwapBuffers();
+	// UpdateScreen();
 
 	uart_log_info("init dma");
+	lcd_log_info("init dma");
 	MX_DMA_Init(); // 初始化 DMA
 	uart_log_info("init tim8");
+	lcd_log_info("init tim8");
 	MX_TIM8_Init(); // 初始化 TIM8
 	uart_log_info("init pwm output");
+	lcd_log_info("init pwm output");
 	Start_PWM(); //! 初始化PA5上的PWM输出
 
 	uart_log_success("init done");
+	lcd_log_success("init done");
 	uart_print("hello world");
+	lcd_print("hello world");
+
+	// 循环调用日志函数
+	for (int i = 1; i <= 20; i++) {
+		char traceMessage[100];
+		char debugMessage[100];
+		char infoMessage[100];
+		char warnMessage[100];
+		char errorMessage[100];
+		char successMessage[100];
+
+		snprintf(traceMessage, sizeof(traceMessage),
+		         "This is a trace message. Test #%d", i);
+		snprintf(debugMessage, sizeof(debugMessage),
+		         "This is a debug message. Test #%d", i);
+		snprintf(infoMessage, sizeof(infoMessage),
+		         "This is an info message. Test #%d", i);
+		snprintf(warnMessage, sizeof(warnMessage),
+		         "This is a warning message. Test #%d", i);
+		snprintf(errorMessage, sizeof(errorMessage),
+		         "This is an error message. Test #%d", i);
+		snprintf(successMessage, sizeof(successMessage),
+		         "This is a success message. Test #%d", i);
+
+		lcd_log_trace(traceMessage);
+		lcd_log_debug(debugMessage);
+		lcd_log_info(infoMessage);
+		lcd_log_warn(warnMessage);
+		lcd_log_error(errorMessage);
+		lcd_log_success(successMessage);
+	}
+	// for (int i=0; i<=20;i++){
+	// 	//lcdClearLen(i);
+	// 	ScrollUp();
+	// }
+	UpdateScreen();
+	
 
 	while (1) {
 		if (uart_ad9220_debug == false) {
@@ -389,9 +411,9 @@ extern "C" int main(void) {
 
 void getNumberChar(uint8_t input_buffer[100], char number_buffer[100]) {
 	int j = 0;
-	    for (int i = 0; i < 100; i++) {
-        number_buffer[i] = 0;
-    }
+	for (int i = 0; i < 100; i++) {
+		number_buffer[i] = 0;
+	}
 	for (int i = 0; i < 100; i++) {
 		if (isdigit(input_buffer[i])) {
 			number_buffer[j++] = input_buffer[i];

@@ -211,7 +211,7 @@ void LCD_RESET(void) {
  * @parameters :None
  * @retvalue   :None
  ******************************************************************************/
-void LCD_Init(void) {
+void LCD_Init(int color) {
 	SPI1_Init_PB(); // 硬件SPI初始化
 	//	SPI_SetSpeed(SPI1,SPI_BaudRatePrescaler_2);
 	LCD_GPIOInit(); // LCD GPIO初始化
@@ -288,7 +288,7 @@ void LCD_Init(void) {
 
 	LCD_direction(USE_HORIZONTAL); // 设置LCD显示方向
 	LCD_LED = 1;                   // 点亮背光
-	LCD_Clear(WHITE);              // 清全屏白色
+	LCD_Clear(color);              // 清全屏白色
 }
 
 /*****************************************************************************
