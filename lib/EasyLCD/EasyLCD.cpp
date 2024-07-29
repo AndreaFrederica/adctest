@@ -291,6 +291,85 @@ void LCD_Init(int color) {
 	LCD_Clear(color);              // 清全屏白色
 }
 
+void LCD_InitLight() {
+	SPI1_Init_PB(); // 硬件SPI初始化
+	//	SPI_SetSpeed(SPI1,SPI_BaudRatePrescaler_2);
+	LCD_GPIOInit(); // LCD GPIO初始化
+	LCD_RESET();    // LCD 复位
+	//************* ILI9488初始化**********//
+	LCD_WR_REG(0XF7);
+	LCD_WR_DATA(0xA9);
+	LCD_WR_DATA(0x51);
+	LCD_WR_DATA(0x2C);
+	LCD_WR_DATA(0x82);
+	LCD_WR_REG(0xC0);
+	LCD_WR_DATA(0x11);
+	LCD_WR_DATA(0x09);
+	LCD_WR_REG(0xC1);
+	LCD_WR_DATA(0x41);
+	LCD_WR_REG(0XC5);
+	LCD_WR_DATA(0x00);
+	LCD_WR_DATA(0x0A);
+	LCD_WR_DATA(0x80);
+	LCD_WR_REG(0xB1);
+	LCD_WR_DATA(0xB0);
+	LCD_WR_DATA(0x11);
+	LCD_WR_REG(0xB4);
+	LCD_WR_DATA(0x02);
+	LCD_WR_REG(0xB6);
+	LCD_WR_DATA(0x02);
+	LCD_WR_DATA(0x42);
+	LCD_WR_REG(0xB7);
+	LCD_WR_DATA(0xc6);
+	LCD_WR_REG(0xBE);
+	LCD_WR_DATA(0x00);
+	LCD_WR_DATA(0x04);
+	LCD_WR_REG(0xE9);
+	LCD_WR_DATA(0x00);
+	LCD_WR_REG(0x36);
+	LCD_WR_DATA((1 << 3) | (0 << 7) | (1 << 6) | (1 << 5));
+	LCD_WR_REG(0x3A);
+	LCD_WR_DATA(0x66);
+	LCD_WR_REG(0xE0);
+	LCD_WR_DATA(0x00);
+	LCD_WR_DATA(0x07);
+	LCD_WR_DATA(0x10);
+	LCD_WR_DATA(0x09);
+	LCD_WR_DATA(0x17);
+	LCD_WR_DATA(0x0B);
+	LCD_WR_DATA(0x41);
+	LCD_WR_DATA(0x89);
+	LCD_WR_DATA(0x4B);
+	LCD_WR_DATA(0x0A);
+	LCD_WR_DATA(0x0C);
+	LCD_WR_DATA(0x0E);
+	LCD_WR_DATA(0x18);
+	LCD_WR_DATA(0x1B);
+	LCD_WR_DATA(0x0F);
+	LCD_WR_REG(0XE1);
+	LCD_WR_DATA(0x00);
+	LCD_WR_DATA(0x17);
+	LCD_WR_DATA(0x1A);
+	LCD_WR_DATA(0x04);
+	LCD_WR_DATA(0x0E);
+	LCD_WR_DATA(0x06);
+	LCD_WR_DATA(0x2F);
+	LCD_WR_DATA(0x45);
+	LCD_WR_DATA(0x43);
+	LCD_WR_DATA(0x02);
+	LCD_WR_DATA(0x0A);
+	LCD_WR_DATA(0x09);
+	LCD_WR_DATA(0x32);
+	LCD_WR_DATA(0x36);
+	LCD_WR_DATA(0x0F);
+	LCD_WR_REG(0x11);
+	HAL_Delay(120);
+	LCD_WR_REG(0x29);
+
+	LCD_direction(USE_HORIZONTAL); // 设置LCD显示方向
+	LCD_LED = 1;                   // 点亮背光
+}
+
 /*****************************************************************************
  * @name       :void LCD_SetWindows(uint16_t  xStar, uint16_t  yStar,uint16_t  xEnd,uint16_t  yEnd)
  * @date       :2018-08-09

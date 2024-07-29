@@ -145,6 +145,7 @@ extern uint16_t  BACK_COLOR;  // 背景颜色.默认为白色
 #define LBBLUE 0X2B12    // 浅棕蓝色(选择条目的反色)
 
 void LCD_Init(int color = WHITE);
+void LCD_InitLight();
 void LCD_DisplayOn(void);
 void LCD_DisplayOff(void);
 void LCD_Clear(uint16_t  Color);

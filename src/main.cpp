@@ -244,7 +244,67 @@ u_int16_t ad9020Read() {
 	return data;
 }
 
+void drawSineWave(uint16_t* buffer,
+                  int width,
+                  int height,
+                  uint16_t bgColor,
+                  uint16_t waveColor) {
+	// 背景填充
+	for (int i = 0; i < width * height; i++) {
+		buffer[i] = bgColor;
+	}
 
+	// 画正弦函数
+	for (int x = 0; x < width; x++) {
+		int y = static_cast<int>((sin(x * 2 * M_PI / width) + 1) * height /
+		                         2); // Normalize to [0, height)
+		buffer[x * (height - 1) + y] = waveColor;
+		// 绘制粗线条
+		for (int dx = -1; dx <= 1; dx++) {
+			for (int dy = -1; dy <= 1; dy++) {
+				int newX = x + dx;
+				int newY = y + dy;
+				if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+					buffer[newX * (height - 1) + newY] = waveColor;
+				}
+			}
+		}
+	}
+}
+
+void drawSineWave2(Spirit obj, int width, int height) {
+	// uart_log_debug("draw sin start");
+	// char buf[20];
+
+	// 背景填充
+	// for (int x = 0; x< width;x++){
+	// 	for (int y = 0;y< height;y++){
+	// 		//sprintf(buf,"x %d y%d",x,y);
+	// 		obj.setPixel(x,y,false);
+	// 	}
+	// }
+	for (int i = 0; i <= width * height / 8; i++) {
+		obj.P_1BIT[i] = 0;
+	}
+
+	// 画正弦函数
+	for (int x = 0; x < width; x++) {
+		// uart_log_debug("draw sin");
+		int y = static_cast<int>((sin(x * 2 * M_PI / width) + 1) * height /
+		                         2); // Normalize to [0, height)
+		obj.setPixel(x, y, true);
+		// 绘制粗线条
+		for (int dx = -1; dx <= 1; dx++) {
+			for (int dy = -1; dy <= 1; dy++) {
+				int newX = x + dx;
+				int newY = y + dy;
+				if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+					obj.setPixel(newX, newY, true);
+				}
+			}
+		}
+	}
+}
 
 extern "C" int main(void) {
 
@@ -287,6 +347,32 @@ extern "C" int main(void) {
 	// 切换缓冲区并更新屏幕
 	// SwapBuffers();
 	// UpdateScreen();
+
+	int width = 128;
+	int height = 64;
+	uint16_t sineWave[width * height];
+
+	drawSineWave(sineWave, width, height, GRAY, RED);
+
+	Spirit sineSpirit;
+	sineSpirit.init(DYNAMIC, C16BIT, width, height, 8, 16, 1);
+	sineSpirit.pixelsInit();
+	sineSpirit.setStaticPixels(sineWave);
+
+	// Add the spirit to the list and draw it
+	spirit_bucket.push_back(sineSpirit);
+
+	width = 300;
+	height = 256;
+	uint8_t pic[width * height / 8];
+	Spirit sineSpirit2;
+	sineSpirit2.init(STATIC, C1BIT, width, height, 16, 32, 0);
+	sineSpirit2.pixelsInit();
+	sineSpirit2.setStaticPixels(pic);
+	drawSineWave2(sineSpirit2, width, height);
+	spirit_bucket.push_back(sineSpirit2);
+
+	UpdateScreen();
 
 	uart_log_info("init dma");
 	lcd_log_info("init dma");
