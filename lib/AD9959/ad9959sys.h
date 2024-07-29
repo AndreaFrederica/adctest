@@ -2,14 +2,14 @@
  * @ File name -> sys.h
  * @ Version   -> V1.0
  * @ Date      -> 12-26-2013
- * @ Brief     -> ÏµÍ³ÉèÖÃÏà¹ØµÄº¯ÊıÍ·ÎÄ¼ş
+ * @ Brief     -> ç³»ç»Ÿè®¾ç½®ç›¸å…³çš„å‡½æ•°å¤´æ–‡ä»¶
  **********************************************************/
 
-#ifndef _sys_h_
-#define _sys_h_
+#ifndef _ad_sys_h_
+#define _ad_sys_h_
 
 /**********************************************************
-                     Íâ²¿º¯ÊıÍ·ÎÄ¼ş
+                     å¤–éƒ¨å‡½æ•°å¤´æ–‡ä»¶
 **********************************************************/
 
 #include "stdio.h"
@@ -19,125 +19,134 @@
 // #include "alloc.h"
 
 /**********************************************************
-                      ¶¯Ì¬Êı¾İ±í¹ÜÀí
+                      åŠ¨æ€æ•°æ®è¡¨ç®¡ç†
 **********************************************************
 
-#define MaxSize					100	//ÉèÖÃ×î´óµÄÁ¬Ğø¿Õ¼ä
+#define MaxSize					100	//è®¾ç½®æœ€å¤§çš„è¿ç»­ç©ºé—´
 
-typedef uint16_t	ElemType;	//¶¨ÒåÊı¾İÀàĞÍ
+typedef uint16_t	ElemType;	//å®šä¹‰æ•°æ®ç±»å‹
 
 typedef struct
 {
-    ElemType *elem;		//Ë³Ğò±íµÄÊ×µØÖ·
-    uint16_t length;	//Ë³Ğò±íµÄ³¤¶È£¨±íÖĞÔªËØµÄ¸öÊı£©
+    ElemType *elem;		//é¡ºåºè¡¨çš„é¦–åœ°å€
+    uint16_t length;	//é¡ºåºè¡¨çš„é•¿åº¦ï¼ˆè¡¨ä¸­å…ƒç´ çš„ä¸ªæ•°ï¼‰
     uint16_t listsize;
-//Ë³Ğò±íÕ¼ÓÃÄÚ´æ¿Õ¼äµÄ´óĞ¡£¨ÒÔsizeof(ElemType)Îªµ¥Î»£¬ÓÉMaxSize¹æ¶¨£© }Sqlist;
+//é¡ºåºè¡¨å ç”¨å†…å­˜ç©ºé—´çš„å¤§å°ï¼ˆä»¥sizeof(ElemType)ä¸ºå•ä½ï¼Œç”±MaxSizeè§„å®šï¼‰ }Sqlist;
                                                                      */
 /**********************************************************
-                    JTAGÄ£Ê½ÉèÖÃ¶¨Òå
+                    JTAGæ¨¡å¼è®¾ç½®å®šä¹‰
 **********************************************************/
 
-#define JTAG_SWD_Enable 0x00000000  // ¸´Î»Öµ
-#define JNTRST_Disable 0x00000001   // JNTRSTÒı½ÅÊÍ·Å
-#define SWD_Enable 0x00000010       // JTAG¹Ø±Õ£¬SWD¿ªÆô
-#define JTAG_SWD_Disable 0x00000100 // JTAGºÍSWD¶¼¹Ø±Õ
+#define JTAG_SWD_Enable 0x00000000  // å¤ä½å€¼
+#define JNTRST_Disable 0x00000001   // JNTRSTå¼•è„šé‡Šæ”¾
+#define SWD_Enable 0x00000010       // JTAGå…³é—­ï¼ŒSWDå¼€å¯
+#define JTAG_SWD_Disable 0x00000100 // JTAGå’ŒSWDéƒ½å…³é—­
 
 /**********************************************************
-                    Î»´ø²Ù×÷Ïà¹Øºê¶¨Òå
-              ²Î¿¼¡¶CM3È¨ÍşÖ¸ÄÏ¡·µÚ87 ~ 92Ò³
+                    ä½å¸¦æ“ä½œç›¸å…³å®å®šä¹‰
+              å‚è€ƒã€ŠCM3æƒå¨æŒ‡å—ã€‹ç¬¬87 ~ 92é¡µ
 **********************************************************/
 
-#define BITBAND(addr, bitnum) \
-	((addr & 0xF0000000) + 0x2000000 + ((addr & 0xFFFFF) << 5) + (bitnum << 2))
-#define MEM_ADDR(addr) *((volatile unsigned long*)(addr))
+// 0,ä¸æ”¯æŒucos
+// 1,æ”¯æŒucos
+#define SYSTEM_SUPPORT_OS 0 // å®šä¹‰ç³»ç»Ÿæ–‡ä»¶å¤¹æ˜¯å¦æ”¯æŒUCOS
+
+// ä½å¸¦æ“ä½œ,å®ç°51ç±»ä¼¼çš„GPIOæ§åˆ¶åŠŸèƒ½
+// å…·ä½“å®ç°æ€æƒ³,å‚è€ƒ<<CM3æƒå¨æŒ‡å—>>ç¬¬äº”ç« (87é¡µ~92é¡µ).M4åŒM3ç±»ä¼¼,åªæ˜¯å¯„å­˜å™¨åœ°å€å˜äº†.
+// IOå£æ“ä½œå®å®šä¹‰
+#define BITBAND(addr, bitnum)                                                  \
+  ((addr & 0xF0000000) + 0x2000000 + ((addr & 0xFFFFF) << 5) + (bitnum << 2))
+#define MEM_ADDR(addr) *((volatile unsigned long *)(addr))
 #define BIT_ADDR(addr, bitnum) MEM_ADDR(BITBAND(addr, bitnum))
+// IOå£åœ°å€æ˜ å°„
+#define GPIOA_ODR_Addr (GPIOA_BASE + 20) // 0x40020014
+#define GPIOB_ODR_Addr (GPIOB_BASE + 20) // 0x40020414
+#define GPIOC_ODR_Addr (GPIOC_BASE + 20) // 0x40020814
+#define GPIOD_ODR_Addr (GPIOD_BASE + 20) // 0x40020C14
+#define GPIOE_ODR_Addr (GPIOE_BASE + 20) // 0x40021014
+#define GPIOF_ODR_Addr (GPIOF_BASE + 20) // 0x40021414
+#define GPIOG_ODR_Addr (GPIOG_BASE + 20) // 0x40021814
+#define GPIOH_ODR_Addr (GPIOH_BASE + 20) // 0x40021C14
+#define GPIOI_ODR_Addr (GPIOI_BASE + 20) // 0x40022014
+
+#define GPIOA_IDR_Addr (GPIOA_BASE + 16) // 0x40020010
+#define GPIOB_IDR_Addr (GPIOB_BASE + 16) // 0x40020410
+#define GPIOC_IDR_Addr (GPIOC_BASE + 16) // 0x40020810
+#define GPIOD_IDR_Addr (GPIOD_BASE + 16) // 0x40020C10
+#define GPIOE_IDR_Addr (GPIOE_BASE + 16) // 0x40021010
+#define GPIOF_IDR_Addr (GPIOF_BASE + 16) // 0x40021410
+#define GPIOG_IDR_Addr (GPIOG_BASE + 16) // 0x40021810
+#define GPIOH_IDR_Addr (GPIOH_BASE + 16) // 0x40021C10
+#define GPIOI_IDR_Addr (GPIOI_BASE + 16) // 0x40022010
+
+// IOå£æ“ä½œ,åªå¯¹å•ä¸€çš„IOå£!
+// ç¡®ä¿nçš„å€¼å°äº16!
+#define PAout(n) BIT_ADDR(GPIOA_ODR_Addr, n) // è¾“å‡º
+#define PAin(n) BIT_ADDR(GPIOA_IDR_Addr, n)  // è¾“å…¥
+
+#define PBout(n) BIT_ADDR(GPIOB_ODR_Addr, n) // è¾“å‡º
+#define PBin(n) BIT_ADDR(GPIOB_IDR_Addr, n)  // è¾“å…¥
+
+#define PCout(n) BIT_ADDR(GPIOC_ODR_Addr, n) // è¾“å‡º
+#define PCin(n) BIT_ADDR(GPIOC_IDR_Addr, n)  // è¾“å…¥
+
+#define PDout(n) BIT_ADDR(GPIOD_ODR_Addr, n) // è¾“å‡º
+#define PDin(n) BIT_ADDR(GPIOD_IDR_Addr, n)  // è¾“å…¥
+
+#define PEout(n) BIT_ADDR(GPIOE_ODR_Addr, n) // è¾“å‡º
+#define PEin(n) BIT_ADDR(GPIOE_IDR_Addr, n)  // è¾“å…¥
+
+#define PFout(n) BIT_ADDR(GPIOF_ODR_Addr, n) // è¾“å‡º
+#define PFin(n) BIT_ADDR(GPIOF_IDR_Addr, n)  // è¾“å…¥
+
+#define PGout(n) BIT_ADDR(GPIOG_ODR_Addr, n) // è¾“å‡º
+#define PGin(n) BIT_ADDR(GPIOG_IDR_Addr, n)  // è¾“å…¥
+
+#define PHout(n) BIT_ADDR(GPIOH_ODR_Addr, n) // è¾“å‡º
+#define PHin(n) BIT_ADDR(GPIOH_IDR_Addr, n)  // è¾“å…¥
+
+#define PIout(n) BIT_ADDR(GPIOI_ODR_Addr, n) // è¾“å‡º
+#define PIin(n) BIT_ADDR(GPIOI_IDR_Addr, n)  // è¾“å…¥
 
 /**********************************************************
-                       GPIOµØÖ·Ó³Éä
-              »ùµØÖ·¼ÓÉÏ¼Ä´æÆ÷Æ«ÒÆµØÖ·×é³É
+                     å¤–éƒ¨è°ƒç”¨åŠŸèƒ½å‡½æ•°
 **********************************************************/
 
-#define GPIOA_ODR_Addr (GPIOA_BASE + 12) // 0x4001080C
-#define GPIOB_ODR_Addr (GPIOB_BASE + 12) // 0x40010C0C
-#define GPIOC_ODR_Addr (GPIOC_BASE + 12) // 0x4001100C
-#define GPIOD_ODR_Addr (GPIOD_BASE + 12) // 0x4001140C
-#define GPIOE_ODR_Addr (GPIOE_BASE + 12) // 0x4001180C
-#define GPIOF_ODR_Addr (GPIOF_BASE + 12) // 0x40011A0C
-#define GPIOG_ODR_Addr (GPIOG_BASE + 12) // 0x40011E0C
+void STM32_Flash_Capacity(uint8_t* STMCapa); // è¯»å–èŠ¯ç‰‡é—ªå­˜å®¹é‡
 
-#define GPIOA_IDR_Addr (GPIOA_BASE + 8) // 0x40010808
-#define GPIOB_IDR_Addr (GPIOB_BASE + 8) // 0x40010C08
-#define GPIOC_IDR_Addr (GPIOC_BASE + 8) // 0x40011008
-#define GPIOD_IDR_Addr (GPIOD_BASE + 8) // 0x40011408
-#define GPIOE_IDR_Addr (GPIOE_BASE + 8) // 0x40011808
-#define GPIOF_IDR_Addr (GPIOF_BASE + 8) // 0x40011A08
-#define GPIOG_IDR_Addr (GPIOG_BASE + 8) // 0x40011E08
+void STM32_CPUID(uint8_t* IDbuff); // è¯»å–CPUID
 
-/**********************************************************
-             ÊµÏÖµ¥Ò»IO²Ù×÷£¬ÀàËÆÓÚ51µÄIO²Ù×÷
-                   nÖµÒªĞ¡ÓÚIO¾ßÌåÊıÄ¿
-**********************************************************/
-
-#define PAout(n) BIT_ADDR(GPIOA_ODR_Addr, n) // Êä³ö
-#define PAin(n) BIT_ADDR(GPIOA_IDR_Addr, n)  // ÊäÈë
-
-#define PBout(n) BIT_ADDR(GPIOB_ODR_Addr, n) // Êä³ö
-#define PBin(n) BIT_ADDR(GPIOB_IDR_Addr, n)  // ÊäÈë
-
-#define PCout(n) BIT_ADDR(GPIOC_ODR_Addr, n) // Êä³ö
-#define PCin(n) BIT_ADDR(GPIOC_IDR_Addr, n)  // ÊäÈë
-
-#define PDout(n) BIT_ADDR(GPIOD_ODR_Addr, n) // Êä³ö
-#define PDin(n) BIT_ADDR(GPIOD_IDR_Addr, n)  // ÊäÈë
-
-#define PEout(n) BIT_ADDR(GPIOE_ODR_Addr, n) // Êä³ö
-#define PEin(n) BIT_ADDR(GPIOE_IDR_Addr, n)  // ÊäÈë
-
-#define PFout(n) BIT_ADDR(GPIOF_ODR_Addr, n) // Êä³ö
-#define PFin(n) BIT_ADDR(GPIOF_IDR_Addr, n)  // ÊäÈë
-
-#define PGout(n) BIT_ADDR(GPIOG_ODR_Addr, n) // Êä³ö
-#define PGin(n) BIT_ADDR(GPIOG_IDR_Addr, n)  // ÊäÈë
-
-/**********************************************************
-                     Íâ²¿µ÷ÓÃ¹¦ÄÜº¯Êı
-**********************************************************/
-
-void STM32_Flash_Capacity(uint8_t* STMCapa); // ¶ÁÈ¡Ğ¾Æ¬ÉÁ´æÈİÁ¿
-
-void STM32_CPUID(uint8_t* IDbuff); // ¶ÁÈ¡CPUID
-
-void STM_Clock_Init(uint8_t pll); // ÏµÍ³Ê±ÖÓ³õÊ¼»¯
+void STM_Clock_Init(uint8_t pll); // ç³»ç»Ÿæ—¶é’Ÿåˆå§‹åŒ–
 
 void MY_NVIC_SetVectorTable(uint32_t NVIC_VectTab,
-                            uint32_t Offset); // ÉèÖÃÏòÁ¿±íÆ«ÒÆµØÖ·
+                            uint32_t Offset); // è®¾ç½®å‘é‡è¡¨åç§»åœ°å€
 
-void MY_NVIC_PriorityGroup_Config(uint32_t NVIC_PriorityGroup); // ÉèÖÃÖĞ¶Ï·Ö×é
+void MY_NVIC_PriorityGroup_Config(uint32_t NVIC_PriorityGroup); // è®¾ç½®ä¸­æ–­åˆ†ç»„
 
 void MY_NVIC_Init(uint8_t NVIC_PreemptionPriority,
                   uint8_t NVIC_Subpriority,
                   uint8_t NVIC_Channel,
                   uint32_t NVIC_Group);
 
-void MY_RCC_DeInit(void); // ËùÓĞÊ±ÖÓ¼Ä´æÆ÷¸´Î»
+void MY_RCC_DeInit(void); // æ‰€æœ‰æ—¶é’Ÿå¯„å­˜å™¨å¤ä½
 
-void SYS_Standby(void); // ÉèÖÃĞ¾Æ¬½øÈë´ı»úÄ£Ê½
+void SYS_Standby(void); // è®¾ç½®èŠ¯ç‰‡è¿›å…¥å¾…æœºæ¨¡å¼
 
-void SYS_SoftReset(void); // ÏµÍ³Èí¸´Î»
+void SYS_SoftReset(void); // ç³»ç»Ÿè½¯å¤ä½
 
-void STM_JTAG_Set(uint32_t mode); // JTAGÄ£Ê½ÉèÖÃ
+void STM_JTAG_Set(uint32_t mode); // JTAGæ¨¡å¼è®¾ç½®
 
-uint8_t BCD_to_HEX(uint8_t BCD_Data); // BCDÂë×ªÎªHEX
+uint8_t BCD_to_HEX(uint8_t BCD_Data); // BCDç è½¬ä¸ºHEX
 
-uint8_t HEX_to_BCD(uint8_t HEX_Data); // HEXÂë×ªÎªBCD
+uint8_t HEX_to_BCD(uint8_t HEX_Data); // HEXç è½¬ä¸ºBCD
 
-uint16_t DX_to_HX(uint16_t DX_Data); // 10½øÖÆÂë×ªÎª16½øÖÆ
+uint16_t DX_to_HX(uint16_t DX_Data); // 10è¿›åˆ¶ç è½¬ä¸º16è¿›åˆ¶
 
-uint16_t HX_to_DX(uint16_t HX_Data); // 16½øÖÆÂë×ªÎª10½øÖÆ
+uint16_t HX_to_DX(uint16_t HX_Data); // 16è¿›åˆ¶ç è½¬ä¸º10è¿›åˆ¶
 
-// void Sqlist_Init(Sqlist *LIST);	//³õÊ¼»¯Êı¾İÁĞ±í
-// void Sqlist_DeInit(void);	//¸´Î»Êı¾İÁĞ±í
+// void Sqlist_Init(Sqlist *LIST);	//åˆå§‹åŒ–æ•°æ®åˆ—è¡¨
+// void Sqlist_DeInit(void);	//å¤ä½æ•°æ®åˆ—è¡¨
 // void InsertElem(Sqlist *L,uint16_t i,ElemType item);
-// //ÏòÒ»¸ö¶¯Ì¬µÄÊı¾İÁĞ±í²åÈëÒ»¸öÔªËØ
+// //å‘ä¸€ä¸ªåŠ¨æ€çš„æ•°æ®åˆ—è¡¨æ’å…¥ä¸€ä¸ªå…ƒç´ 
 
 #endif

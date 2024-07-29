@@ -1,13 +1,12 @@
 #ifndef _AD9959_H_
 #define _AD9959_H_
-#include "stdint.h"
 #include "ad9959sys.h"
-
+#include "stdint.h"
 
 // AD9959管脚宏定义
-#define CS PAout(6)
-#define SCLK PBout(1)
-#define UPDATE PBout(0)
+#define AD_CS PAout(6)
+#define AD_SCLK PBout(1)
+#define AD_UPDATE PBout(0)
 
 #define PS0 PAout(7)
 #define PS1 PAout(2)
@@ -79,8 +78,10 @@ void Write_RDW(uint32_t r_delta);            // 写RDW上升增量寄存器
 void Write_FDW(uint32_t f_delta);            // 写FDW下降增量寄存器
 
 void Write_Profile_Fre(uint8_t profile, uint32_t data); // 写Profile寄存器,频率
-void Write_Profile_Ampli(uint8_t profile, uint16_t data); // 写Profile寄存器,幅度
-void Write_Profile_Phase(uint8_t profile, uint16_t data); // 写Profile寄存器,相位
+void Write_Profile_Ampli(uint8_t profile,
+                         uint16_t data); // 写Profile寄存器,幅度
+void Write_Profile_Phase(uint8_t profile,
+                         uint16_t data); // 写Profile寄存器,相位
 /********************************************************************************************/
 
 /*****************************点频操作函数***********************************/
@@ -134,4 +135,4 @@ void AD9959_SetPhase_Sweep(uint8_t Channel,
                            uint16_t Ampli); // 设置线性扫相的参数
 /********************************************************************************************/
 
-#endif
+#endif // AD9959_H

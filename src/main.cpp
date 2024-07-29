@@ -10,8 +10,10 @@
 #include <cmath>
 #include <cstring>
 #include <string>
-#include <AndreaUI.h>
-
+//#include <AndreaUI.h>
+extern "C" {
+#include "ad9959.h"
+}
 extern void Error_Handler(void);
 
 /* Private variables ---------------------------------------------------------*/
@@ -221,90 +223,90 @@ void assert_failed(uint8_t* file, uint32_t line) {
 }
 #endif /* USE_FULL_ASSERT */
 
-void uartRxCallbackStart() { red_led.switchOn(); }
-void uartRxCallbackEnd() { red_led.switchOff(); }
-void uartTxCallbackStart() { blue_led.switchOn(); }
-void uartTxCallbackEnd() { blue_led.switchOff(); }
+// void uartRxCallbackStart() { red_led.switchOn(); }
+// void uartRxCallbackEnd() { red_led.switchOff(); }
+// void uartTxCallbackStart() { blue_led.switchOn(); }
+// void uartTxCallbackEnd() { blue_led.switchOff(); }
 
-u_int16_t ad9020Read() {
-	uint16_t data = 0;
-	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_0) << 0;
-	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_1) << 1;
-	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_2) << 2;
-	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_3) << 3;
-	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_4) << 4;
-	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_5) << 5;
-	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_6) << 6;
-	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_7) << 7;
-	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_8) << 8;
-	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_9) << 9;
-	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_10) << 10;
-	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_11) << 11;
-	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_12) << 12;
-	return data;
-}
+// u_int16_t ad9020Read() {
+// 	uint16_t data = 0;
+// 	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_0) << 0;
+// 	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_1) << 1;
+// 	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_2) << 2;
+// 	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_3) << 3;
+// 	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_4) << 4;
+// 	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_5) << 5;
+// 	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_6) << 6;
+// 	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_7) << 7;
+// 	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_8) << 8;
+// 	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_9) << 9;
+// 	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_10) << 10;
+// 	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_11) << 11;
+// 	data |= HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_12) << 12;
+// 	return data;
+// }
 
-void drawSineWave(uint16_t* buffer,
-                  int width,
-                  int height,
-                  uint16_t bgColor,
-                  uint16_t waveColor) {
-	// 背景填充
-	for (int i = 0; i < width * height; i++) {
-		buffer[i] = bgColor;
-	}
+// void drawSineWave(uint16_t* buffer,
+//                   int width,
+//                   int height,
+//                   uint16_t bgColor,
+//                   uint16_t waveColor) {
+// 	// 背景填充
+// 	for (int i = 0; i < width * height; i++) {
+// 		buffer[i] = bgColor;
+// 	}
 
-	// 画正弦函数
-	for (int x = 0; x < width; x++) {
-		int y = static_cast<int>((sin(x * 2 * M_PI / width) + 1) * height /
-		                         2); // Normalize to [0, height)
-		buffer[x * (height - 1) + y] = waveColor;
-		// 绘制粗线条
-		for (int dx = -1; dx <= 1; dx++) {
-			for (int dy = -1; dy <= 1; dy++) {
-				int newX = x + dx;
-				int newY = y + dy;
-				if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
-					buffer[newX * (height - 1) + newY] = waveColor;
-				}
-			}
-		}
-	}
-}
+// 	// 画正弦函数
+// 	for (int x = 0; x < width; x++) {
+// 		int y = static_cast<int>((sin(x * 2 * M_PI / width) + 1) * height /
+// 		                         2); // Normalize to [0, height)
+// 		buffer[x * (height - 1) + y] = waveColor;
+// 		// 绘制粗线条
+// 		for (int dx = -1; dx <= 1; dx++) {
+// 			for (int dy = -1; dy <= 1; dy++) {
+// 				int newX = x + dx;
+// 				int newY = y + dy;
+// 				if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+// 					buffer[newX * (height - 1) + newY] = waveColor;
+// 				}
+// 			}
+// 		}
+// 	}
+// }
 
-void drawSineWave2(Spirit obj, int width, int height) {
-	// uart_log_debug("draw sin start");
-	// char buf[20];
+// void drawSineWave2(Spirit obj, int width, int height) {
+// 	// uart_log_debug("draw sin start");
+// 	// char buf[20];
 
-	// 背景填充
-	// for (int x = 0; x< width;x++){
-	// 	for (int y = 0;y< height;y++){
-	// 		//sprintf(buf,"x %d y%d",x,y);
-	// 		obj.setPixel(x,y,false);
-	// 	}
-	// }
-	for (int i = 0; i <= width * height / 8; i++) {
-		obj.P_1BIT[i] = 0;
-	}
+// 	// 背景填充
+// 	// for (int x = 0; x< width;x++){
+// 	// 	for (int y = 0;y< height;y++){
+// 	// 		//sprintf(buf,"x %d y%d",x,y);
+// 	// 		obj.setPixel(x,y,false);
+// 	// 	}
+// 	// }
+// 	for (int i = 0; i <= width * height / 8; i++) {
+// 		obj.P_1BIT[i] = 0;
+// 	}
 
-	// 画正弦函数
-	for (int x = 0; x < width; x++) {
-		// uart_log_debug("draw sin");
-		int y = static_cast<int>((sin(x * 2 * M_PI / width) + 1) * height /
-		                         2); // Normalize to [0, height)
-		obj.setPixel(x, y, true);
-		// 绘制粗线条
-		for (int dx = -1; dx <= 1; dx++) {
-			for (int dy = -1; dy <= 1; dy++) {
-				int newX = x + dx;
-				int newY = y + dy;
-				if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
-					obj.setPixel(newX, newY, true);
-				}
-			}
-		}
-	}
-}
+// 	// 画正弦函数
+// 	for (int x = 0; x < width; x++) {
+// 		// uart_log_debug("draw sin");
+// 		int y = static_cast<int>((sin(x * 2 * M_PI / width) + 1) * height /
+// 		                         2); // Normalize to [0, height)
+// 		obj.setPixel(x, y, true);
+// 		// 绘制粗线条
+// 		for (int dx = -1; dx <= 1; dx++) {
+// 			for (int dy = -1; dy <= 1; dy++) {
+// 				int newX = x + dx;
+// 				int newY = y + dy;
+// 				if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+// 					obj.setPixel(newX, newY, true);
+// 				}
+// 			}
+// 		}
+// 	}
+// }
 
 extern "C" int main(void) {
 
@@ -314,185 +316,185 @@ extern "C" int main(void) {
 
 	/* Initialize all configured peripherals */
 	MX_GPIO_Init(); // 初始化 GPIO
-	red_led.init(GPIOC, GPIO_PIN_5);
-	blue_led.init(GPIOB, GPIO_PIN_2);
+	//red_led.init(GPIOC, GPIO_PIN_5);
+	//blue_led.init(GPIOB, GPIO_PIN_2);
 
-	usedRxCallbackStart = uartRxCallbackStart;
-	usedRxCallbackEnd = uartRxCallbackEnd;
-	usedTxCallbackStart = uartTxCallbackStart;
-	usedTxCallbackEnd = uartTxCallbackEnd;
+	// usedRxCallbackStart = uartRxCallbackStart;
+	// usedRxCallbackEnd = uartRxCallbackEnd;
+	// usedTxCallbackStart = uartTxCallbackStart;
+	// usedTxCallbackEnd = uartTxCallbackEnd;
 	MX_UART4_Init(); // 初始化 UART4
 	uart_print("\n");
 	uart_log_info("hello stm32f407");
 
 	uart_log_info("init spi1");
-	SPI1_Init_PB();
-	uart_log_info("init LCD");
-	LCD_Init(BLACK);
-	// DrawTestPage("LCD Test");
+	// SPI1_Init_PB();
+	// uart_log_info("init LCD");
+	// LCD_Init(BLACK);
+	// // DrawTestPage("LCD Test");
 
-	// 初始化缓冲区
-	InitializeBuffer(buffer1, ' ', WHITE, BLACK);
-	InitializeBuffer(buffer2, ' ', WHITE, BLACK);
+	// // 初始化缓冲区
+	// InitializeBuffer(buffer1, ' ', WHITE, BLACK);
+	// InitializeBuffer(buffer2, ' ', WHITE, BLACK);
 
-	// DisplayAlphabet();
-	//  初始化 lcd_print 环境
-	//lcd_print_init(WHITE, BLACK, SCROLL_UP);
-	lcd_print_init(WHITE, BLACK, RETURN_TO_ORIGIN);
+	// // DisplayAlphabet();
+	// //  初始化 lcd_print 环境
+	// //lcd_print_init(WHITE, BLACK, SCROLL_UP);
+	// lcd_print_init(WHITE, BLACK, RETURN_TO_ORIGIN);
 
-	// 使用 lcd_print 打印文本
-	lcd_print_basic(
-	    "Hello, World!\nThis is a test of the lcd_print function.\n");
+	// // 使用 lcd_print 打印文本
+	// lcd_print_basic(
+	//     "Hello, World!\nThis is a test of the lcd_print function.\n");
 
-	// 切换缓冲区并更新屏幕
-	// SwapBuffers();
+	// // 切换缓冲区并更新屏幕
+	// // SwapBuffers();
+	// // UpdateScreen();
+
+	// int width = 128;
+	// int height = 64;
+	// uint16_t sineWave[width * height];
+
+	// drawSineWave(sineWave, width, height, GRAY, RED);
+
+	// Spirit sineSpirit;
+	// sineSpirit.init(DYNAMIC, C16BIT, width, height, 8, 16, 1);
+	// sineSpirit.pixelsInit();
+	// sineSpirit.setStaticPixels(sineWave);
+
+	// // Add the spirit to the list and draw it
+	// spirit_bucket.push_back(sineSpirit);
+
+	// width = 300;
+	// height = 256;
+	// uint8_t pic[width * height / 8];
+	// Spirit sineSpirit2;
+	// sineSpirit2.init(STATIC, C1BIT, width, height, 16, 32, 0);
+	// sineSpirit2.pixelsInit();
+	// sineSpirit2.setStaticPixels(pic);
+	// drawSineWave2(sineSpirit2, width, height);
+	// spirit_bucket.push_back(sineSpirit2);
+
 	// UpdateScreen();
 
-	int width = 128;
-	int height = 64;
-	uint16_t sineWave[width * height];
-
-	drawSineWave(sineWave, width, height, GRAY, RED);
-
-	Spirit sineSpirit;
-	sineSpirit.init(DYNAMIC, C16BIT, width, height, 8, 16, 1);
-	sineSpirit.pixelsInit();
-	sineSpirit.setStaticPixels(sineWave);
-
-	// Add the spirit to the list and draw it
-	spirit_bucket.push_back(sineSpirit);
-
-	width = 300;
-	height = 256;
-	uint8_t pic[width * height / 8];
-	Spirit sineSpirit2;
-	sineSpirit2.init(STATIC, C1BIT, width, height, 16, 32, 0);
-	sineSpirit2.pixelsInit();
-	sineSpirit2.setStaticPixels(pic);
-	drawSineWave2(sineSpirit2, width, height);
-	spirit_bucket.push_back(sineSpirit2);
-
-	UpdateScreen();
-
 	uart_log_info("init dma");
-	lcd_log_info("init dma");
-	MX_DMA_Init(); // 初始化 DMA
+	//lcd_log_info("init dma");
+	//MX_DMA_Init(); // 初始化 DMA
 	uart_log_info("init tim8");
-	lcd_log_info("init tim8");
-	MX_TIM8_Init(); // 初始化 TIM8
-	uart_log_info("init pwm output");
-	lcd_log_info("init pwm output");
-	Start_PWM(); //! 初始化PA5上的PWM输出
+	//lcd_log_info("init tim8");
+	//MX_TIM8_Init(); // 初始化 TIM8
+	//uart_log_info("init pwm output");
+	//lcd_log_info("init pwm output");
+	//Start_PWM(); //! 初始化PA5上的PWM输出
 
 	uart_log_success("init done");
-	lcd_log_success("init done");
+	//lcd_log_success("init done");
 	uart_print("hello world");
-	lcd_print("hello world");
+	//lcd_print("hello world");
 
 	// 循环调用日志函数
-	for (int i = 1; i <= 20; i++) {
-		char traceMessage[100];
-		char debugMessage[100];
-		char infoMessage[100];
-		char warnMessage[100];
-		char errorMessage[100];
-		char successMessage[100];
+	// for (int i = 1; i <= 20; i++) {
+	// 	char traceMessage[100];
+	// 	char debugMessage[100];
+	// 	char infoMessage[100];
+	// 	char warnMessage[100];
+	// 	char errorMessage[100];
+	// 	char successMessage[100];
 
-		snprintf(traceMessage, sizeof(traceMessage),
-		         "This is a trace message. Test #%d", i);
-		snprintf(debugMessage, sizeof(debugMessage),
-		         "This is a debug message. Test #%d", i);
-		snprintf(infoMessage, sizeof(infoMessage),
-		         "This is an info message. Test #%d", i);
-		snprintf(warnMessage, sizeof(warnMessage),
-		         "This is a warning message. Test #%d", i);
-		snprintf(errorMessage, sizeof(errorMessage),
-		         "This is an error message. Test #%d", i);
-		snprintf(successMessage, sizeof(successMessage),
-		         "This is a success message. Test #%d", i);
+	// 	snprintf(traceMessage, sizeof(traceMessage),
+	// 	         "This is a trace message. Test #%d", i);
+	// 	snprintf(debugMessage, sizeof(debugMessage),
+	// 	         "This is a debug message. Test #%d", i);
+	// 	snprintf(infoMessage, sizeof(infoMessage),
+	// 	         "This is an info message. Test #%d", i);
+	// 	snprintf(warnMessage, sizeof(warnMessage),
+	// 	         "This is a warning message. Test #%d", i);
+	// 	snprintf(errorMessage, sizeof(errorMessage),
+	// 	         "This is an error message. Test #%d", i);
+	// 	snprintf(successMessage, sizeof(successMessage),
+	// 	         "This is a success message. Test #%d", i);
 
-		lcd_log_trace(traceMessage);
-		lcd_log_debug(debugMessage);
-		lcd_log_info(infoMessage);
-		lcd_log_warn(warnMessage);
-		lcd_log_error(errorMessage);
-		lcd_log_success(successMessage);
-	}
+	// 	lcd_log_trace(traceMessage);
+	// 	lcd_log_debug(debugMessage);
+	// 	lcd_log_info(infoMessage);
+	// 	lcd_log_warn(warnMessage);
+	// 	lcd_log_error(errorMessage);
+	// 	lcd_log_success(successMessage);
+	// }
 	// for (int i=0; i<=20;i++){
 	// 	//lcdClearLen(i);
 	// 	ScrollUp();
 	// }
-	UpdateScreen();
-	
+	//UpdateScreen();
+	AD9959_Init();
 
 	while (1) {
-		if (uart_ad9220_debug == false) {
-			uint8_t input_buffer[100];
-			uart_print("new tim8_set_period:", "");
-			uart_input_it(input_buffer, sizeof(input_buffer));
-			uart_print("Received: "); // 打印接收到的数据
-			uart_print(input_buffer);
+	// 	if (uart_ad9220_debug == false) {
+	// 		uint8_t input_buffer[100];
+	// 		uart_print("new tim8_set_period:", "");
+	// 		uart_input_it(input_buffer, sizeof(input_buffer));
+	// 		uart_print("Received: "); // 打印接收到的数据
+	// 		uart_print(input_buffer);
 
-			// 检查是否包含 "reboot"
-			if (strstr((char*)input_buffer, "reboot") != nullptr) {
-				reboot();
-			}
-			char number_buffer[100] = {0}; // 用来存储提取出的数字
-			getNumberChar(input_buffer, number_buffer);
+	// 		// 检查是否包含 "reboot"
+	// 		if (strstr((char*)input_buffer, "reboot") != nullptr) {
+	// 			reboot();
+	// 		}
+	// 		char number_buffer[100] = {0}; // 用来存储提取出的数字
+	// 		getNumberChar(input_buffer, number_buffer);
 
-			uart_print("Numbers Extracted: ");
-			uart_print(number_buffer);
+	// 		uart_print("Numbers Extracted: ");
+	// 		uart_print(number_buffer);
 
-			//? 将提取的数字转换为 int 类型
-			int extracted_number = atoi(number_buffer);
-			// uart_print("Converted to int: " +
-			// std::to_string(extracted_number));
-			tim8_set_period = extracted_number; //! 设置pwm频率
-			//? 使用公式 y = sys_frequency / （tim8_set_period x
-			// tim8_set_prescaler+1） 计算预计的PWM频率
-			double frequency = 0;
-			frequency = ((sys_frequency * 1000000) /
-			             ((tim8_set_prescaler + 1) * tim8_set_period)) /
-			            1000;
-			uart_print("Calculated Frequency: " + doubleToString(frequency, 4) +
-			           " kHz");
+	// 		//? 将提取的数字转换为 int 类型
+	// 		int extracted_number = atoi(number_buffer);
+	// 		// uart_print("Converted to int: " +
+	// 		// std::to_string(extracted_number));
+	// 		tim8_set_period = extracted_number; //! 设置pwm频率
+	// 		//? 使用公式 y = sys_frequency / （tim8_set_period x
+	// 		// tim8_set_prescaler+1） 计算预计的PWM频率
+	// 		double frequency = 0;
+	// 		frequency = ((sys_frequency * 1000000) /
+	// 		             ((tim8_set_prescaler + 1) * tim8_set_period)) /
+	// 		            1000;
+	// 		uart_print("Calculated Frequency: " + doubleToString(frequency, 4) +
+	// 		           " kHz");
 
-			uart_print("new tim8_set_prescaler:", "");
-			uart_input_it(input_buffer, sizeof(input_buffer));
-			uart_print("Received: "); // 打印接收到的数据
-			uart_print(input_buffer);
+	// 		uart_print("new tim8_set_prescaler:", "");
+	// 		uart_input_it(input_buffer, sizeof(input_buffer));
+	// 		uart_print("Received: "); // 打印接收到的数据
+	// 		uart_print(input_buffer);
 
-			// 检查是否包含 "reboot"
-			if (strstr((char*)input_buffer, "reboot") != nullptr) {
-				reboot();
-			}
-			getNumberChar(input_buffer, number_buffer);
+	// 		// 检查是否包含 "reboot"
+	// 		if (strstr((char*)input_buffer, "reboot") != nullptr) {
+	// 			reboot();
+	// 		}
+	// 		getNumberChar(input_buffer, number_buffer);
 
-			uart_print("Numbers Extracted: ");
-			uart_print(number_buffer);
+	// 		uart_print("Numbers Extracted: ");
+	// 		uart_print(number_buffer);
 
-			//? 将提取的数字转换为 int 类型
-			extracted_number = atoi(number_buffer);
-			// uart_print("Converted to int: " +
-			// std::to_string(extracted_number));
-			tim8_set_prescaler = extracted_number; //! 设置pwm频率
-			//? 使用公式 y = sys_frequency / （tim8_set_period x
-			// tim8_set_prescaler+1） 计算预计的PWM频率 double frequency = 0;
-			frequency = ((sys_frequency * 1000000) /
-			             ((tim8_set_prescaler + 1) * tim8_set_period)) /
-			            1000;
-			uart_print("Calculated Frequency: " + doubleToString(frequency, 4) +
-			           " kHz");
+	// 		//? 将提取的数字转换为 int 类型
+	// 		extracted_number = atoi(number_buffer);
+	// 		// uart_print("Converted to int: " +
+	// 		// std::to_string(extracted_number));
+	// 		tim8_set_prescaler = extracted_number; //! 设置pwm频率
+	// 		//? 使用公式 y = sys_frequency / （tim8_set_period x
+	// 		// tim8_set_prescaler+1） 计算预计的PWM频率 double frequency = 0;
+	// 		frequency = ((sys_frequency * 1000000) /
+	// 		             ((tim8_set_prescaler + 1) * tim8_set_period)) /
+	// 		            1000;
+	// 		uart_print("Calculated Frequency: " + doubleToString(frequency, 4) +
+	// 		           " kHz");
 
-			MX_TIM8_Init();
-			Start_PWM();
-		} else {
-			uint16_t number = ad9020Read();
-			char str[6];
-			ConvertUint16ToString(number, str);
-			uart_print(str);
-		}
-	}
+	// 		MX_TIM8_Init();
+	// 		Start_PWM();
+	// 	} else {
+	// 		uint16_t number = ad9020Read();
+	// 		char str[6];
+	// 		ConvertUint16ToString(number, str);
+	// 		uart_print(str);
+	// 	}
+	 }
 }
 
 void getNumberChar(uint8_t input_buffer[100], char number_buffer[100]) {

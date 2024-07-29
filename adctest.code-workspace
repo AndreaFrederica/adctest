@@ -90,6 +90,8 @@
 			"MOSI",
 			"mypow",
 			"Nlevel",
+			"NOJTAG",
+			"NONJTRST",
 			"NOPULL",
 			"Numberof",
 			"NVIC",

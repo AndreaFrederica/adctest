@@ -52,7 +52,7 @@ void STM32_Flash_Capacity(uint8_t* STMCapa) {
 void STM32_CPUID(uint8_t* IDbuff) {
     uint32_t CPUID;
     CPUID = *((uint32_t*)0xE000ED00);
-    sprintf((char*)IDbuff, "CPU ID:%08X", CPUID);
+    sprintf((char*)IDbuff, "CPU ID:%08lX", CPUID);
 }
 
 /**********************************************************
@@ -154,18 +154,21 @@ void SYS_SoftReset(void) {
  * 返回数值 ---> none
  * 功能说明 ---> none
  **********************************************************/
-void STM_JTAG_Set(uint32_t mode) {
-    __HAL_RCC_AFIO_CLK_ENABLE();
-    __HAL_AFIO_REMAP_SWJ_DISABLE(); // 禁止JTAG-DP和SW-DP接口
+// void STM_JTAG_Set(uint32_t mode) {
+//     // __HAL_RCC_AFIO_CLK_ENABLE();
+//     // __HAL_AFIO_REMAP_SWJ_DISABLE(); // 禁止JTAG-DP和SW-DP接口
 
-    if (mode == 0x00000001) {
-        __HAL_AFIO_REMAP_SWJ_NONJTRST();
-    } else if (mode == 0x00000002) {
-        __HAL_AFIO_REMAP_SWJ_NOJTAG();
-    } else if (mode == 0x00000004) {
-        __HAL_AFIO_REMAP_SWJ_DISABLE();
-    }
-}
+//     // if (mode == 0x00000001) {
+//     //     __HAL_AFIO_REMAP_SWJ_NONJTRST();
+//     // } else if (mode == 0x00000002) {
+//     //     __HAL_AFIO_REMAP_SWJ_NOJTAG();
+//     // } else if (mode == 0x00000004) {
+//     //     __HAL_AFIO_REMAP_SWJ_DISABLE();
+// 	__HAL_RCC_GPIOA_CLK_ENABLE();
+//     HAL_DBGMCU_DisableDBGSleepMode();
+//     __HAL_AFIO_REMAP_SWJ_DISABLE();
+//     }
+// }
 
 /**********************************************************
  * 函数功能 ---> 系统时钟初始化
@@ -204,7 +207,7 @@ void STM_Clock_Init(uint8_t pll) {
  * 返回数值 ---> HEX码
  * 功能说明 ---> none
  **********************************************************/
-uint16_t BCD_to_HEX(uint16_t BCD_Data) {
+uint8_t BCD_to_HEX(uint8_t BCD_Data) {
     return ((BCD_Data >> 12) * 1000 + ((BCD_Data >> 8) & 0x0F) * 100 + ((BCD_Data >> 4) & 0x0F) * 10 + (BCD_Data & 0x0F));
 }
 
@@ -214,7 +217,7 @@ uint16_t BCD_to_HEX(uint16_t BCD_Data) {
  * 返回数值 ---> BCD码
  * 功能说明 ---> none
  **********************************************************/
-uint16_t HEX_to_BCD(uint16_t HEX_Data) {
+uint8_t HEX_to_BCD(uint8_t HEX_Data) {
     return (((HEX_Data / 1000) << 12) | (((HEX_Data % 1000) / 100) << 8) | (((HEX_Data % 100) / 10) << 4) | (HEX_Data % 10));
 }
 

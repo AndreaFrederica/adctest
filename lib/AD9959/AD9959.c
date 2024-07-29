@@ -2,9 +2,9 @@
 /************************************************************
                     AD9959 驱动程序
                     AD9959--单片机
-硬件连接:  CS			——PA6;
-          SCLK 		——PB1;
-          UPDATE	——PB0;
+硬件连接:  AD_CS			——PA6;
+          AD_SCLK 		——PB1;
+          AD_UPDATE	——PB0;
           SP0    	——PA7;
           SP1			——PA2;
           SP2			——PB10;
@@ -93,9 +93,9 @@ void delay1(uint32_t length) {
 **************************************************************/
 void Intserve(void) {
 	AD9959_PWR = 0;
-	CS = 1;
-	SCLK = 0;
-	UPDATE = 0;
+	AD_CS = 1;
+	AD_SCLK = 0;
+	AD_UPDATE = 0;
 	PS0 = 0;
 	PS1 = 0;
 	PS2 = 0;
@@ -123,11 +123,11 @@ void IntReset(void) {
 ** 函数功能 ： AD9959更新数据
 **************************************************************/
 void IO_Update(void) {
-	UPDATE = 0;
+	AD_UPDATE = 0;
 	delay1(2);
-	UPDATE = 1;
+	AD_UPDATE = 1;
 	delay1(4);
-	UPDATE = 0;
+	AD_UPDATE = 0;
 }
 
 /************************************************************
@@ -150,34 +150,34 @@ void AD9959_WriteData(uint8_t RegisterAddress,
 
 	ControlValue = RegisterAddress;
 	// 写入地址
-	SCLK = 0;
-	CS = 0;
+	AD_SCLK = 0;
+	AD_CS = 0;
 	for (i = 0; i < 8; i++) {
-		SCLK = 0;
+		AD_SCLK = 0;
 		if (0x80 == (ControlValue & 0x80))
 			SDIO0 = 1;
 		else
 			SDIO0 = 0;
-		SCLK = 1;
+		AD_SCLK = 1;
 		ControlValue <<= 1;
 	}
-	SCLK = 0;
+	AD_SCLK = 0;
 	// 写入数据
 	for (RegisterIndex = 0; RegisterIndex < NumberofRegisters;
 	     RegisterIndex++) {
 		ValueToWrite = RegisterData[RegisterIndex];
 		for (i = 0; i < 8; i++) {
-			SCLK = 0;
+			AD_SCLK = 0;
 			if (0x80 == (ValueToWrite & 0x80))
 				SDIO0 = 1;
 			else
 				SDIO0 = 0;
-			SCLK = 1;
+			AD_SCLK = 1;
 			ValueToWrite <<= 1;
 		}
-		SCLK = 0;
+		AD_SCLK = 0;
 	}
-	CS = 1;
+	AD_CS = 1;
 }
 
 /************************************************************
