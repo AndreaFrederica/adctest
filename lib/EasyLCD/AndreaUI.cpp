@@ -443,9 +443,9 @@ void Spirit::setPalette(int key, uint16_t color) { palette[key] = color; }
 
 void Spirit::drawSelf() {
 	// uart_log_debug("0000");
-	int x, y;
+	//int x, y;
 	if (color_deep == C1BIT) {
-		int len = height * width;
+		//int len = height * width;
 		int pos;
 		for (int y = 0; y < height; y++) {
 			// uart_log_debug("11111");
@@ -459,7 +459,7 @@ void Spirit::drawSelf() {
 			}
 		}
 	} else if (color_deep == C16BIT) {
-		int len = height * width;
+		//int len = height * width;
 		int pos;
 		for (int y = 0; y < height; y++) {
 			for (int x = 0; x < width; x++) {
@@ -476,9 +476,9 @@ void Spirit::drawSelf() {
 
 void Spirit::forceDrawSelf() {
 	// uart_log_debug("0000");
-	int x, y;
+	//int x, y;
 	if (color_deep == C1BIT) {
-		int len = height * width;
+		//int len = height * width;
 		int pos;
 		for (int y = 0; y < height; y++) {
 			// uart_log_debug("11111");
@@ -489,7 +489,7 @@ void Spirit::forceDrawSelf() {
 			}
 		}
 	} else if (color_deep == C16BIT) {
-		int len = height * width;
+		//int len = height * width;
 		int pos;
 		for (int y = 0; y < height; y++) {
 			for (int x = 0; x < width; x++) {

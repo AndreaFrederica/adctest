@@ -30,12 +30,12 @@
 //液晶屏SPI总线数据读信号，如果不需要读，可以不接线
 //=======================================液晶屏控制线接线==========================================//
 //     LCD模块 					      STM32单片机
-//       LED         接          PB13
+//       LCD_LED         接          PB13
 //液晶屏背光控制信号，如果不需要控制，接5V或3.3V
 //       SCK         接          PB3          //液晶屏SPI总线时钟信号
-//      DC/RS        接          PB14         //液晶屏数据/命令控制信号
-//       RST         接          PB12         //液晶屏复位控制信号
-//       CS          接          PB15         //液晶屏片选控制信号
+//      DC/LCD_RS        接          PB14         //液晶屏数据/命令控制信号
+//       LCD_RST         接          PB12         //液晶屏复位控制信号
+//       LCD_CS          接          PB15         //液晶屏片选控制信号
 //=========================================触摸屏触接线=========================================//
 //如果模块不带触摸功能或者带有触摸功能，但是不需要触摸功能，则不需要进行触摸屏接线
 //	   LCD模块                STM32单片机
@@ -182,7 +182,8 @@ void LCD_GPIOInit(void)
     __HAL_RCC_GPIOB_CLK_ENABLE();
 
     // Configure GPIO pins: PB12, PB13, PB14, PB15
-    GPIO_InitStruct.Pin = GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15;
+    //GPIO_InitStruct.Pin = GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15;
+	GPIO_InitStruct.Pin = GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_8 | GPIO_PIN_9;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;  // Push-pull output
     GPIO_InitStruct.Pull = GPIO_PULLUP;          // Pull-up
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;  // Very high speed

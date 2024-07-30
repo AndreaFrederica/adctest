@@ -44,22 +44,22 @@
 // 	}
 
 // 	void toggle() {
-// 		// 切换 LED 状态
+// 		// 切换 LCD_LED 状态
 // 		HAL_GPIO_TogglePin(gpio_group, gpio_pin);
 // 	}
 
 // 	void switchOn() {
-// 		// 打开 LED
+// 		// 打开 LCD_LED
 // 		HAL_GPIO_WritePin(gpio_group, gpio_pin, GPIO_PIN_RESET);
 // 	}
 
 // 	void switchOff() {
-// 		// 关闭 LED
+// 		// 关闭 LCD_LED
 // 		HAL_GPIO_WritePin(gpio_group, gpio_pin, GPIO_PIN_SET);
 // 	}
 
 // 	void blink(uint32_t on_duration_ms = 0, uint32_t off_duration_ms = 0) {
-// 		// 闪烁 LED
+// 		// 闪烁 LCD_LED
 // 		switchOn();
 // 		if (on_duration_ms > 0) {
 // 			HAL_Delay(on_duration_ms);

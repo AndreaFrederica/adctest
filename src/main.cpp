@@ -14,8 +14,9 @@
 #include <string>
 #include <tools.h>
 
+
 extern "C" {
-//#include "ad9959.h"
+#include <ad9959.h>
 }
 extern void Error_Handler(void);
 
@@ -497,8 +498,8 @@ void ec11Click() {
 }
 
 void progUPDATE(){
-	//AD9959_Set_Fre(CH0, prog_wireless_fc_freq * 10000);
-	//IO_Update();
+	// AD9959_Set_Fre(CH0, prog_wireless_fc_freq * 10000);
+	// IO_Update();
 	setDacOutput(DAC_CHANNEL_1,2040 * prog_am_range / 100);
 	//setDacOutput(DAC_CHANNEL_1, 2048);
 }
@@ -593,6 +594,19 @@ extern "C" int main(void) {
 	//                  12288); // 设置通道3相位控制值12288(270度)，范围0~16383
 	// IO_Update(); // AD9959更新数据,调用此函数后，上述操作生效！！！！
 
+	Init_AD9959();
+	Write_Frequence(0,100000);
+	Write_Frequence(1,200000);
+	Write_Frequence(2,300000);
+	Write_Frequence(3,400000);
+	Write_Amplitude(0,1023);
+	Write_Amplitude(1,1023);
+	Write_Amplitude(2,1023);
+	Write_Amplitude(3,1023);
+	Write_Phase(0,0);
+	Write_Phase(1,4096);
+	Write_Phase(2,8192);
+	Write_Phase(3,12288);
 	while (1) {
 		displaySelectRow();
 		displayProgInfo();

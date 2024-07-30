@@ -1,690 +1,589 @@
+#include "ad9959.h"
 
-/************************************************************
-                    AD9959 驱动程序
-                    AD9959--单片机
-硬件连接:  AD_CS			——PA6;
-          AD_SCLK 		——PB1;
-          AD_UPDATE	——PB0;
-          SP0    	——PA7;
-          SP1			——PA2;
-          SP2			——PB10;
-          SP3			——PC0;
-          SDIO0		——PA5;
-          SDIO1		——PA4;
-          SDIO2		——PA3;
-          SDIO3		——PA8;
-   AD9959_PWR(PDC)——PA9;
-          RST			——PA10;
-          GND			--GND(0V)
-//AD9959.c
-//康威电子工作室
-//说明：本程序基于硬件的外接晶振为25MHZ
-**************************************************************/
+// #define AD9959_LED
 
-#include "AD9959.h"
+// 定义 GPIOE 引脚
+#define SDIO0_Pin GPIO_PIN_0
+#define SDIO0_GPIO_Port GPIOE
+#define SDIO1_Pin GPIO_PIN_1
+#define SDIO1_GPIO_Port GPIOE
+#define SDIO2_Pin GPIO_PIN_2
+#define SDIO2_GPIO_Port GPIOE
+#define SDIO3_Pin GPIO_PIN_3
+#define SDIO3_GPIO_Port GPIOE
 
-uint8_t FR1_DATA[3] = {
-    0xD0, 0x00,
-    0x00}; // VCO gain control[23]=1系统时钟高于255Mhz;
-           // PLL[22:18]=10100,20倍频,20*25M=500MHZ; Charge pump control = 75uA
+#define PDC_Pin GPIO_PIN_4
+#define PDC_GPIO_Port GPIOE
+#define RESET_Pin GPIO_PIN_5
+#define RESET_GPIO_Port GPIOE
+#define SCLK_Pin GPIO_PIN_6
+#define SCLK_GPIO_Port GPIOE
+#define CS_Pin GPIO_PIN_7
+#define CS_GPIO_Port GPIOE
+#define UPDATE_Pin GPIO_PIN_8
+#define UPDATE_GPIO_Port GPIOE
 
-uint8_t FR2_DATA[2] = {
-    0x00, 0x00}; // 双方向扫描，即从起始值扫到结束值后，又从结束值扫到起始值
-// uint8_t FR2_DATA[2] = {0x80,0x00};//
-// 单方向扫描，即从起始值扫到结束值后，又从起始值扫到结束值，以此类推
+#define PS0_Pin GPIO_PIN_9
+#define PS0_GPIO_Port GPIOE
+#define PS1_Pin GPIO_PIN_10
+#define PS1_GPIO_Port GPIOE
+#define PS2_Pin GPIO_PIN_11
+#define PS2_GPIO_Port GPIOE
+#define PS3_Pin GPIO_PIN_12
+#define PS3_GPIO_Port GPIOE
 
-double ACC_FRE_FACTOR = 8.589934592; // 频率因子8.589934592=(2^32)/500000000
-                                     // 其中500M=25M*20(倍频数可编程)
+// Forced IO definitions
+driverIO SDIO0 = {SDIO0_GPIO_Port, SDIO0_Pin};
+driverIO SDIO1 = {SDIO1_GPIO_Port, SDIO1_Pin};
+driverIO SDIO2 = {SDIO2_GPIO_Port, SDIO2_Pin};
+driverIO SDIO3 = {SDIO3_GPIO_Port, SDIO3_Pin};
+driverIO PDC = {PDC_GPIO_Port, PDC_Pin};
+driverIO RST = {RESET_GPIO_Port, RESET_Pin};
+driverIO SCLK = {SCLK_GPIO_Port, SCLK_Pin};
+driverIO CS = {CS_GPIO_Port, CS_Pin};
+driverIO UPDATE = {UPDATE_GPIO_Port, UPDATE_Pin};
+driverIO PS0 = {PS0_GPIO_Port, PS0_Pin};
+driverIO PS1 = {PS1_GPIO_Port, PS1_Pin};
+driverIO PS2 = {PS2_GPIO_Port, PS2_Pin};
+driverIO PS3 = {PS3_GPIO_Port, PS3_Pin};
 
-uint8_t CFR_DATA[3] = {0x00, 0x03,
-                       0x02}; // default Value = 0x000302	   //通道功能寄存器
+uint8_t CSR_DATA0[1] = {0x10}; // Enable CH0
+uint8_t CSR_DATA1[1] = {0x20}; // Enable CH1
+uint8_t CSR_DATA2[1] = {0x40}; // Enable CH2
+uint8_t CSR_DATA3[1] = {0x80}; // Enable CH3
 
-/************************************************************
-** 函数名称 ：void AD9959_Init(void)
-** 函数功能 ：初始化控制AD9959需要用到的IO口,及寄存器
-** 入口参数 ：无
-** 出口参数 ：无
-** 函数说明 ：无
-**************************************************************/
-void AD9959_Init(void) {
-    GPIO_InitTypeDef GPIO_InitStruct = {0};
+uint8_t CSR_DATA[4] = {0x10, 0x20, 0x40, 0x80}; // Enable CH0,CH1,CH2,CH3
 
-    // 使能 GPIO 时钟
-    __HAL_RCC_GPIOA_CLK_ENABLE();
-    __HAL_RCC_GPIOB_CLK_ENABLE();
-    __HAL_RCC_GPIOC_CLK_ENABLE();
+uint8_t FR2_DATA[2] = {0x00, 0x00}; // default Value = 0x0000
 
-    // 初始化 GPIOA 管脚 PA2, PA3, PA4, PA5, PA6, PA7, PA8, PA9, PA10
-    GPIO_InitStruct.Pin = GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5 |
-                          GPIO_PIN_6 | GPIO_PIN_7 | GPIO_PIN_8 | GPIO_PIN_9 |
-                          GPIO_PIN_10;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;  // 推挽输出
-    GPIO_InitStruct.Pull = GPIO_NOPULL;          // 无上下拉
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH; // 高速
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+/*
+uint8_t LSRR_DATA[2] = {0x00, 0x00};            // default Value = 0x----
+uint8_t RDW_DATA[4] = {0x00, 0x00, 0x00, 0x00}; // default Value = 0x--------
+uint8_t FDW_DATA[4] = {0x00, 0x00, 0x00, 0x00}; // default Value = 0x--------
+*/
 
-    // 初始化 GPIOB 管脚 PB0, PB1, PB10
-    GPIO_InitStruct.Pin = GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_10;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW; // 低速
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+// uint32_t SinFre[4] = {10000000, 10000000, 200000000, 40000};
+uint32_t SinFre[4] = {1000, 1000, 1000, 1000};
+uint32_t SinAmp[4] = {1023, 1023, 1023, 1023};
+// uint32_t SinPhr[4] = {0, 4095, 4095 * 3, 4095 * 2};
+uint32_t SinPhr[4] = {0, 0, 0, 0};
 
-    // 初始化 GPIOC 管脚 PC0
-    GPIO_InitStruct.Pin = GPIO_PIN_0;
-    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+// 引脚初始化函数
+void MX_AD9959_GPIO_Init(void) {
+	GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-    Intserve(); // IO口电平状态初始化
-    IntReset(); // AD9959复位
+	// 启用 GPIOE 时钟
+	__HAL_RCC_GPIOE_CLK_ENABLE();
 
-    // 初始化功能寄存器
-    AD9959_WriteData(FR1_ADD, 3, FR1_DATA); // 写功能寄存器1
-    AD9959_WriteData(FR2_ADD, 2, FR2_DATA); // 写功能寄存器2
+	// 配置软件SPI引脚
+	GPIO_InitStruct.Pin = SDIO0_Pin | SDIO1_Pin | SDIO2_Pin | SDIO3_Pin |
+	                      SCLK_Pin | CS_Pin | UPDATE_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStruct.Pull = GPIO_PULLUP;                // 上拉电阻
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH; // 使用 Low 速度
+	HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+
+	// 配置其他控制引脚
+	GPIO_InitStruct.Pin =
+	    PDC_Pin | RESET_Pin | PS0_Pin | PS1_Pin | PS2_Pin | PS3_Pin;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW; // 使用 Low 速度
+	HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+
+	// 额外配置: 默认所有引脚为高电平
+	HAL_GPIO_WritePin(GPIOE,
+	                  SDIO0_Pin | SDIO1_Pin | SDIO2_Pin | SDIO3_Pin | SCLK_Pin |
+	                      CS_Pin | UPDATE_Pin | PDC_Pin | RESET_Pin | PS0_Pin |
+	                      PS1_Pin | PS2_Pin | PS3_Pin,
+	                  GPIO_PIN_SET);
 }
 
+/**
+ * @brief Initializes the AD9959 module.
+ */
+void Init_AD9959(void) {
+	// GPIO need to be initialized before calling this function
+	MX_AD9959_GPIO_Init();
+	uint8_t FR1_DATA[3] = {0xD3, 0x00, 0x00}; // 20 frequency doubling
+	uint8_t CFR_DATA[3] = {0x00, 0x03, 0x00}; // default Value = 0x000302
+	InitIO_9959();
+	InitReset();
 
-// 延时
-void delay1(uint32_t length) {
+	WriteData_AD9959(FR1_ADD, 3, FR1_DATA, 1);
+	WriteData_AD9959(CFR_ADD, 3, CFR_DATA, 1);
+
+	Write_Phase(3, SinPhr[3]);
+	Write_Phase(0, SinPhr[0]);
+	Write_Phase(1, SinPhr[1]);
+	Write_Phase(2, SinPhr[2]);
+
+	Write_Frequence(0, SinFre[0]);
+	Write_Frequence(1, SinFre[1]);
+	Write_Frequence(2, SinFre[2]);
+	Write_Frequence(3, SinFre[3]);
+
+	Write_Amplitude(3, SinAmp[3]);
+	Write_Amplitude(0, SinAmp[0]);
+	Write_Amplitude(1, SinAmp[1]);
+	Write_Amplitude(2, SinAmp[2]);
+}
+
+/**
+ * @brief Delays the execution for a specified amount of time.
+ *
+ * @param length The length of the delay in loop.
+ */
+void delay_9959(uint32_t length) {
 	length = length * 12;
 	while (length--)
 		;
 }
-/************************************************************
-** 函数名称 ：void Intserve(void)
-** 函数功能 ：IO口电平状态初始化
-**************************************************************/
-void Intserve(void) {
-	AD9959_PWR = 0;
-	AD_CS = 1;
-	AD_SCLK = 0;
-	AD_UPDATE = 0;
-	PS0 = 0;
-	PS1 = 0;
-	PS2 = 0;
-	PS3 = 0;
-	SDIO0 = 0;
-	SDIO1 = 0;
-	SDIO2 = 0;
-	SDIO3 = 0;
+
+/**
+ * @brief Initializes the IO for AD9959.
+ */
+void InitIO_9959(void) {
+
+	WRT(PDC, 0);
+	WRT(CS, 1);
+	WRT(SCLK, 0);
+	WRT(UPDATE, 0);
+	WRT(PS0, 0);
+	WRT(PS1, 0);
+	WRT(PS2, 0);
+	WRT(PS3, 0);
+	WRT(SDIO0, 0);
+	WRT(SDIO1, 0);
+	WRT(SDIO2, 0);
+	WRT(SDIO3, 0);
 }
 
-/************************************************************
-** 函数名称 ：void IntReset(void)
-** 函数功能 ：AD9959复位
-**************************************************************/
-void IntReset(void) {
-	Reset = 0;
-	//delay1(1);
-	delay_ms(1);
-	Reset = 1;
-	//delay1(30);
-	delay_ms(30);
-	Reset = 0;
+void InitReset(void) {
+	WRT(RST, 0);
+	delay_9959(1);
+	WRT(RST, 1);
+	delay_9959(30);
+	WRT(RST, 0);
 }
 
-/************************************************************
-** 函数名称 void IO_Update(void)
-** 函数功能 ： AD9959更新数据
-**************************************************************/
+/**
+ * @brief Updates the IO state of the AD9959 device.
+ *
+ * This function is responsible for updating the IO state of the AD9959 device.
+ * It triggers the IO update operation to ensure that any pending changes in the
+ * control registers are applied to the device.
+ */
 void IO_Update(void) {
-	AD_UPDATE = 0;
-	delay_ms(2);
-	//delay1(2);
-	AD_UPDATE = 1;
-	delay_ms(4);
-	//delay1(4);
-	AD_UPDATE = 0;
+	WRT(UPDATE, 1);
+	delay_9959(1);
+	WRT(UPDATE, 0);
 }
 
-/************************************************************
-** 函数名称 ：void AD9959_WriteData(u8 RegisterAddress, u8 NumberofRegisters, u8
-*RegisterData)
-** 函数功能 ：使用模拟SPI向AD9959写数据
-** 入口参数 ：RegisterAddress: 寄存器地址
-                        NumberofRegisters: 要写入的字节数
-                        *RegisterData: 数据起始地址
-** 出口参数 ：无
-** 函数说明 ：无
-**************************************************************/
-void AD9959_WriteData(uint8_t RegisterAddress,
+/**
+ * @brief Writes data to the AD9959 device.
+ *
+ * This function writes data to the specified register address of the AD9959
+ * device.
+ *
+ * @param RegisterAddress The address of the register to write data to.
+ * @param NumberofRegisters The number of registers to write data to.
+ * @param RegisterData Pointer to the data to be written to the registers.
+ * @param update Flag indicating whether to update the device after writing
+ * data. Set to 1 to update the device, or 0 to skip the update.
+ */
+void WriteData_AD9959(uint8_t RegisterAddress,
                       uint8_t NumberofRegisters,
-                      uint8_t* RegisterData) {
+                      uint8_t* RegisterData,
+                      uint8_t update) {
 	uint8_t ControlValue = 0;
 	uint8_t ValueToWrite = 0;
 	uint8_t RegisterIndex = 0;
 	uint8_t i = 0;
 
 	ControlValue = RegisterAddress;
-	// 写入地址
-	AD_SCLK = 0;
-	AD_CS = 0;
+	// Write address
+	WRT(SCLK, 0);
+	WRT(CS, 0);
 	for (i = 0; i < 8; i++) {
-		AD_SCLK = 0;
+		WRT(SCLK, 0);
 		if (0x80 == (ControlValue & 0x80))
-			SDIO0 = 1;
+			WRT(SDIO0, 1);
 		else
-			SDIO0 = 0;
-		AD_SCLK = 1;
+			WRT(SDIO0, 0);
+		WRT(SCLK, 1);
 		ControlValue <<= 1;
+		delay_9959(2);
 	}
-	AD_SCLK = 0;
-	// 写入数据
+
+	WRT(SCLK, 0);
+	// Write data
+	// 每个字节的数据都是从高位开始传输
+	// 第一个传输的字节是最高位的字节
 	for (RegisterIndex = 0; RegisterIndex < NumberofRegisters;
 	     RegisterIndex++) {
 		ValueToWrite = RegisterData[RegisterIndex];
 		for (i = 0; i < 8; i++) {
-			AD_SCLK = 0;
+			WRT(SCLK, 0);
 			if (0x80 == (ValueToWrite & 0x80))
-				SDIO0 = 1;
+				WRT(SDIO0, 1);
 			else
-				SDIO0 = 0;
-			AD_SCLK = 1;
+				WRT(SDIO0, 0);
+			WRT(SCLK, 1);
 			ValueToWrite <<= 1;
+			delay_9959(2);
 		}
-		AD_SCLK = 0;
+		WRT(SCLK, 0);
 	}
-	AD_CS = 1;
+	if (update == 1)
+		IO_Update();
+	WRT(CS, 1);
 }
 
-/************************************************************
-** 函数名称 ：void Write_CFTW0(uint32_t fre)
-** 函数功能 ：写CFTW0通道频率转换字寄存器
-** 入口参数 ： Freq:	写入频率，范围0~200 000 000 Hz
-** 出口参数 ：无
-** 函数说明 ：无
-**************************************************************/
-void Write_CFTW0(uint32_t fre) {
-	uint8_t CFTW0_DATA[4] = {0x00, 0x00, 0x00, 0x00}; // 中间变量
-	uint32_t Temp;
-	Temp = (uint32_t)fre * ACC_FRE_FACTOR;
-	CFTW0_DATA[3] = (uint8_t)Temp;
-	CFTW0_DATA[2] = (uint8_t)(Temp >> 8);
-	CFTW0_DATA[1] = (uint8_t)(Temp >> 16);
-	CFTW0_DATA[0] = (uint8_t)(Temp >> 24);
-	AD9959_WriteData(CFTW0_ADD, 4, CFTW0_DATA); // CTW0 address 0x04
+/**
+ * @brief Writes the frequency value to the specified channel.
+ *
+ * @param Channel The channel number to write the frequency to.(0 to 3)
+ * @param Freq The frequency value to be written.(1 to 500000000)
+ */
+void Write_Frequence(uint8_t Channel, uint32_t Freq) {
+	if (Freq > 500000000 || Freq < 1) {
+		Freq = 114514;
+		AD9959_error();
+	}
+
+	uint8_t CFTW0_DATA[4] = {0x00, 0x00, 0x00, 0x00};
+	Freq2Word(Freq, CFTW0_DATA);
+	Channel_Select(Channel);
+	WriteData_AD9959(CFTW0_ADD, 4, CFTW0_DATA,
+	                 1); // CTW0 address 0x04.Output CH0 setting frequency
 }
 
-/************************************************************
-** 函数名称 ：void Write_ACR(uint16_t Ampli)
-** 函数功能 ：写ACR通道幅度转换字寄存器
-** 入口参数 ：Ampli: 输出幅度,范围0~1023，控制值0~1023对应输出幅度0~500mVpp左右
-** 出口参数 ：无
-** 函数说明 ：无
-**************************************************************/
-void Write_ACR(uint16_t Ampli) {
-	uint32_t A_temp = 0;
+/**
+ * @brief Writes the amplitude value for a specific channel.
+ *
+ * @param Channel The channel number.(0 to 3)
+ * @param Ampli The amplitude value to be written.(0 to 1023)
+ */
+void Write_Amplitude(uint8_t Channel, uint16_t Ampli) {
+	// Ampli的取值在0到1023之间
+	if (Ampli > 1023 || Ampli < 0) {
+		Ampli = 114;
+		AD9959_error();
+	}
 	uint8_t ACR_DATA[3] = {0x00, 0x00,
 	                       0x00}; // default Value = 0x--0000 Rest = 18.91/Iout
-	A_temp = Ampli | 0x1000;
-
-	ACR_DATA[1] = (uint8_t)(A_temp >> 8);   // 高位数据
-	ACR_DATA[2] = (uint8_t)A_temp;          // 低位数据
-	AD9959_WriteData(ACR_ADD, 3, ACR_DATA); // ACR address 0x06.CHn设定幅度
+	Amp2Word(Ampli, ACR_DATA);
+	Channel_Select(Channel);
+	WriteData_AD9959(ACR_ADD, 3, ACR_DATA, 1);
 }
 
-/************************************************************
-** 函数名称 ：void Write_CPOW0(uint16_t Phase)
-** 函数功能 ：写CPOW0通道相位转换字寄存器
-** 入口参数 ：Phase:		输出相位,范围：0~16383(对应角度：0°~360°)
-** 出口参数 ：无
-** 函数说明 ：无
-**************************************************************/
-void Write_CPOW0(uint16_t Phase) {
-	uint8_t CPOW0_data[2] = {0x00, 0x00};
-	CPOW0_data[1] = (uint8_t)Phase;
-	CPOW0_data[0] = (uint8_t)(Phase >> 8);
-
-	AD9959_WriteData(CPOW0_ADD, 2, CPOW0_data); // CPOW0 address
-	                                            // 0x05.CHn设定相位
+/**
+ * @brief Writes the phase value for a specific channel.
+ *
+ * @param Channel The channel number.(0 to 3)
+ * @param Phase The phase value(degree) to be written.(0 to 359)
+ */
+void Write_Phase(uint8_t Channel, uint16_t Phase) {
+	// Phase_max = 16383
+	if (Phase > 359 || Phase < 0) {
+		Phase = 0;
+		AD9959_error();
+	}
+	uint8_t CPOW0_DATA[2] = {0x00, 0x00};
+	Phase2Word(Phase, CPOW0_DATA);
+	Channel_Select(Channel);
+	WriteData_AD9959(CPOW0_ADD, 2, CPOW0_DATA, 1);
 }
 
-/************************************************************
-** 函数名称 ：void Write_LSRR(uint8_t rsrr,uint8_t fsrr)
-** 函数功能 ：写LSRR线性扫描斜率寄存器
-** 入口参数 ：	rsrr:	上升斜率,范围：0~255
-                            fsrr:	下降斜率,范围：0~255
-** 出口参数 ：无
-** 函数说明 ：无
-**************************************************************/
-void Write_LSRR(uint8_t rsrr, uint8_t fsrr) {
-	uint8_t LSRR_data[2] = {0x00, 0x00};
-
-	LSRR_data[1] = rsrr;
-	LSRR_data[0] = fsrr; // 高8位下降斜率
-
-	AD9959_WriteData(LSRR_ADD, 2, LSRR_data);
+/**
+ * @brief  Select the channel
+ * @name  Channel_Select
+ * @param  channel
+ * @retval None
+ */
+void Channel_Select(uint8_t Channel) {
+	if (Channel < 0 || Channel > 3) {
+		AD9959_error();
+		return;
+	} else
+		WriteData_AD9959(CSR_ADD, 1, CSR_DATA + Channel, 0);
 }
 
-/************************************************************
-** 函数名称 ：void Write_RDW(uint32_t r_delta)
-** 函数功能 ：写RDW上升增量寄存器
-** 入口参数 ：r_delta:上升增量,0-4294967295
-** 出口参数 ：无
-** 函数说明 ：无
-**************************************************************/
-void Write_RDW(uint32_t r_delta) {
-	uint8_t RDW_data[4] = {0x00, 0x00, 0x00, 0x00}; // 中间变量
+/**
+ * @brief  AD9959 Error handler
+ * CAN BE MODIFIED
+ * @note
+ * @name  AD9959_error
+ * @param  None
+ * @retval None
+ */
+void AD9959_error(void) {}
 
-	RDW_data[3] = (uint8_t)r_delta;
-	RDW_data[2] = (uint8_t)(r_delta >> 8);
-	RDW_data[1] = (uint8_t)(r_delta >> 16);
-	RDW_data[0] = (uint8_t)(r_delta >> 24);
-	AD9959_WriteData(RDW_ADD, 4, RDW_data);
+/**
+ * @brief Performs a frequency sweep on the AD9959 device.
+ *
+ * @param Channel The channel number to perform the sweep on.
+ * @param Start_Freq The starting frequency of the sweep.
+ * @param Stop_Freq The ending frequency of the sweep.
+ * @param Step The frequency step size for each iteration of the sweep.
+ * @param time The duration of each frequency step in microsecond.(1-2048)j
+ * @param NO_DWELL
+ */
+void Sweep_Frequency(uint8_t Channel,
+                     uint32_t Start_Freq,
+                     uint32_t Stop_Freq,
+                     uint32_t Step,
+                     uint32_t time,
+                     uint8_t NO_DWELL) {
+	Channel_Select(Channel);
+	switch (Channel) {
+	case 0:
+		WRT(PS0, 0);
+	case 1:
+		WRT(PS1, 0);
+	case 2:
+		WRT(PS2, 0);
+	case 3:
+		WRT(PS3, 0);
+	}
+
+	uint8_t CFR_GET[3] = {0x00, 0x00, 0x00};
+	ReadData_AD9959(CFR_ADD, 3, CFR_GET);
+	uint8_t CFR_DATA_Freq[3] = {CFR_GET[0] | 0x80, CFR_GET[1] | 0x40,
+	                            CFR_GET[2] | 0x00};
+	// Disable no-dwell bit by writing 0 to CFR[13]
+	if (NO_DWELL)
+		CFR_DATA_Freq[1] = CFR_DATA_Freq[1] | 0x80;
+
+	uint8_t FR1_DATA_sweep[3] = {0xD3, 0x00, 0x00};
+	WriteData_AD9959(CFR_ADD, 3, CFR_DATA_Freq, 1);
+	WriteData_AD9959(FR1_ADD, 3, FR1_DATA_sweep, 1);
+
+	uint32_t Start_Freq_word, Stop_Freq_Word, Step_Word;
+	uint8_t Time_word;
+	Start_Freq_word = (uint32_t)Start_Freq * 8.589934592;
+	Stop_Freq_Word = (uint32_t)Stop_Freq * 8.589934592;
+	Step_Word = (uint32_t)Step * 8.589934592;
+	Time_word = (uint8_t)time / 8.0; // ns
+
+	uint8_t CFTW0_DATA_START[4] = {0x00, 0x00, 0x00, 0x00};
+	uint8_t CFTW0_DATA_STOP[4] = {0x00, 0x00, 0x00, 0x00};
+	uint8_t RDW_DATA[4] = {0x00, 0x00, 0x00, 0x00};
+
+	CFTW0_DATA_START[3] = (uint8_t)Start_Freq_word;
+	CFTW0_DATA_START[2] = (uint8_t)(Start_Freq_word >> 8);
+	CFTW0_DATA_START[1] = (uint8_t)(Start_Freq_word >> 16);
+	CFTW0_DATA_START[0] = (uint8_t)(Start_Freq_word >> 24);
+	WriteData_AD9959(CFTW0_ADD, 4, CFTW0_DATA_START, 0);
+
+	CFTW0_DATA_STOP[3] = (uint8_t)Stop_Freq_Word;
+	CFTW0_DATA_STOP[2] = (uint8_t)(Stop_Freq_Word >> 8);
+	CFTW0_DATA_STOP[1] = (uint8_t)(Stop_Freq_Word >> 16);
+	CFTW0_DATA_STOP[0] = (uint8_t)(Stop_Freq_Word >> 24);
+	WriteData_AD9959(CW1, 4, CFTW0_DATA_STOP, 0);
+
+	RDW_DATA[3] = (uint8_t)Step_Word;
+	RDW_DATA[2] = (uint8_t)(Step_Word >> 8);
+	RDW_DATA[1] = (uint8_t)(Step_Word >> 16);
+	RDW_DATA[0] = (uint8_t)(Step_Word >> 24);
+	WriteData_AD9959(RDW_ADD, 4, RDW_DATA, 0);
+
+	uint8_t FDW_DATA[4] = {0x00, 0x00, 0x00, 0x00};
+	FDW_DATA[3] = (uint8_t)Step_Word;
+	FDW_DATA[2] = (uint8_t)(Step_Word >> 8);
+	FDW_DATA[1] = (uint8_t)(Step_Word >> 16);
+	FDW_DATA[0] = (uint8_t)(Step_Word >> 24);
+	WriteData_AD9959(FDW_ADD, 4, FDW_DATA, 0);
+
+	uint8_t LSRR_DATA[2] = {0x00, 0x00};
+	LSRR_DATA[1] = (uint8_t)Time_word;
+	LSRR_DATA[0] = (uint8_t)Time_word;
+	WriteData_AD9959(LSRR_ADD, 2, LSRR_DATA, 1); // UPDATE
+
+	switch (Channel) {
+	case 0:
+		WRT(PS0, 1);
+	case 1:
+		WRT(PS1, 1);
+	case 2:
+		WRT(PS2, 1);
+	case 3:
+		WRT(PS3, 1);
+	}
 }
 
-/************************************************************
-** 函数名称 ：void Write_FDW(uint32_t f_delta)
-** 函数功能 ：写FDW下降增量寄存器
-** 入口参数 ：f_delta:下降增量,0-4294967295
-** 出口参数 ：无
-** 函数说明 ：无
-**************************************************************/
-void Write_FDW(uint32_t f_delta) {
-	uint8_t FDW_data[4] = {0x00, 0x00, 0x00, 0x00}; // 中间变量
-
-	FDW_data[3] = (uint8_t)f_delta;
-	FDW_data[2] = (uint8_t)(f_delta >> 8);
-	FDW_data[1] = (uint8_t)(f_delta >> 16);
-	FDW_data[0] = (uint8_t)(f_delta >> 24);
-	AD9959_WriteData(FDW_ADD, 4, FDW_data);
+uint32_t Get_Freq(void) {
+	uint8_t data[4] = {0};
+	ReadData_AD9959(CFTW0_ADD, 4, data);
+	int Freq =
+	    (data[0] << 24 | data[1] << 16 | data[2] << 8 | data[3]) / 8.589934592;
+	return Freq;
 }
 
-/************************************************************
-** 函数名称 ：void Write_Profile_Fre(uint8_t profile,uint32_t data)
-** 函数功能 ：写Profile寄存器
-** 入口参数 ：profile:	profile号(0~14)
-                            data:	写入频率，范围0~200 000 000 Hz
-** 出口参数 ：无
-** 函数说明 ：无
-**************************************************************/
-void Write_Profile_Fre(uint8_t profile, uint32_t data) {
-	uint8_t profileAddr;
-	uint8_t Profile_data[4] = {0x00, 0x00, 0x00, 0x00}; // 中间变量
+uint8_t Get_Amp(void) {
+	uint8_t data[3] = {0};
+	ReadData_AD9959(ACR_ADD, 3, data);
+	return data[2];
+}
+
+void ReadData_AD9959(uint8_t RegisterAddress,
+                     uint8_t NumberofRegisters,
+                     uint8_t* RegisterData) {
+	uint8_t ControlValue = 0;
+	uint8_t ValueToRead = 0;
+	uint8_t RegisterIndex = 0;
+	uint8_t i = 0;
+	ControlValue = RegisterAddress | 0x80;
+	// Write address
+	WRT(CS, 0);
+	WRT(SCLK, 0);
+	delay_9959(0x20);
+	for (i = 0; i < 8; i++) {
+		WRT(SCLK, 0);
+		if (0x80 == (ControlValue & 0x80))
+			WRT(SDIO0, 1);
+		else
+			WRT(SDIO0, 0);
+		WRT(SCLK, 1);
+		ControlValue <<= 1;
+		delay_9959(2);
+	}
+
+	WRT(SCLK, 0);
+
+	// Input mode
+	GPIO_InitTypeDef GPIO_InitStruct = {0};
+	GPIO_InitStruct.Pin = SDIO0_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+	HAL_GPIO_Init(SDIO0_GPIO_Port, &GPIO_InitStruct);
+	delay_9959(0x20);
+	// Read data
+	// MSB first
+	for (RegisterIndex = 0; RegisterIndex < NumberofRegisters;
+	     RegisterIndex++) {
+		ValueToRead = 0;
+		for (i = 0; i < 8; i++) {
+			ValueToRead <<= 1;
+			WRT(SCLK, 1);
+			if (GET(SDIO0) == 1)
+				ValueToRead |= 0x01;
+			else
+				ValueToRead &= 0xFE;
+			WRT(SCLK, 0);
+		}
+		WRT(SCLK, 0);
+		RegisterData[RegisterIndex] = ValueToRead;
+	}
+	delay_9959(0x20);
+	WRT(CS, 1);
+	GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	HAL_GPIO_Init(SDIO0_GPIO_Port, &GPIO_InitStruct);
+}
+
+void Stop_AD9959(void) {
+	uint8_t CFR_data[3] = {0};
+	ReadData_AD9959(CFTW0_ADD, 3, CFR_data);
+	CFR_data[0] = CFR_data[0] | 0x02;
+	WriteData_AD9959(CFR_ADD, 3, CFR_data, 1);
+}
+
+/**
+ * @brief Set the 2fsk object
+ *
+ * @param Channel The channel number to write the frequency to.(0 to 3)
+ * @param f_start The start frequency value(Hz) to be written when profile pin
+ * is reset.
+ * @param f_stop The stop frequency value(Hz) to be written when profile pin is
+ * set.
+ * @return * void
+ */
+void SET_2FSK(uint8_t Channel, double f_start, double f_stop) {
+	uint8_t f_startWord[4];
+	uint8_t f_stopWord[4];
+	uint8_t CFR_data[3] = {0x80, 0x23, 0x30}; // none RU/RD
+	uint8_t FR_data[3] = {0xD0, 0x00, 0x00};
+
+	Channel_Select(Channel);
+
+	WriteData_AD9959(FR1_ADD, 3, FR_data, 0);
+	WriteData_AD9959(CFR_ADD, 3, CFR_data, 0);
+
+	Freq2Word(f_start, f_startWord);
+	Freq2Word(f_stop, f_stopWord);
+
+	WriteData_AD9959(CFTW0_ADD, 4, f_startWord, 0);
+	WriteData_AD9959(CW1, 4, f_stopWord, 1);
+}
+
+/**
+ * @brief Set the 2ask object
+ *
+ * @param Channel The channel number to write the frequency to.(0 to 3)
+ * @param f The frequency value(Hz) to be written.(1 to 500000000)
+ * @param A_start The start amplitude value to be written when profile pin is
+ * reset.(0 to 1023)
+ * @param A_stop The stop amplitude value to be written when profile pin is
+ * set.(0 to 1023)
+ * @return * void
+ */
+void SET_2ASK(uint8_t Channel, double f, uint16_t A_start, uint16_t A_stop) {
+	uint8_t fWord[4];
+	uint8_t A_startWord[3] = {0x00, 0x00, 0x00};
+	uint8_t A_stopWord[4] = {0x00, 0x00, 0x00, 0x00};
+	uint8_t A_stopWord_temp[3] = {0x00, 0x00, 0x00};
+
+	uint8_t CFR_data[3] = {0x40, 0x03, 0x30};
+	uint8_t FR_data[3] = {0xD0, 0x00, 0x00};
+
+	Amp2Word(A_start, A_startWord);
+	Amp2Word(A_stop, A_stopWord_temp);
+
+	// A_stopWord_teep[9:0]->A_stopWord[31:22]
+	uint32_t Temp = ((uint32_t)(A_stopWord_temp[1] | 0x03)) << 8 |
+	                (uint32_t)(A_stopWord_temp[2]);
+	Temp = Temp << 22;
+	A_stopWord[0] = (uint8_t)(Temp >> 24);
+	A_stopWord[1] = (uint8_t)(Temp >> 22);
+
+	Channel_Select(Channel);
+
+	WriteData_AD9959(FR1_ADD, 3, FR_data, 0);
+	WriteData_AD9959(CFR_ADD, 3, CFR_data, 0);
+
+	WriteData_AD9959(ACR_ADD, 3, A_startWord, 0);
+	WriteData_AD9959(CW1, 4, A_stopWord, 0);
+
+	Freq2Word(f, fWord);
+	WriteData_AD9959(CFTW0_ADD, 4, fWord, 1);
+}
+
+void Freq2Word(double f, uint8_t* fWord) {
+	// fWord 4 bytes
 	uint32_t Temp;
 	Temp =
-	    (uint32_t)data *
-	    ACC_FRE_FACTOR; // 将输入频率因子分为四个字节  4.294967296=(2^32)/500000000
-	Profile_data[3] = (uint8_t)Temp;
-	Profile_data[2] = (uint8_t)(Temp >> 8);
-	Profile_data[1] = (uint8_t)(Temp >> 16);
-	Profile_data[0] = (uint8_t)(Temp >> 24);
-	profileAddr = PROFILE_ADDR_BASE + profile;
-
-	AD9959_WriteData(profileAddr, 4, Profile_data);
-}
-/************************************************************
-** 函数名称 ：void Write_Profile_Ampli(uint8_t profile,uint16_t data)
-** 函数功能 ：写Profile寄存器
-** 入口参数 ：profile:	profile号(0~14)
-                            data:	 写入幅度,范围0~1023，
-** 出口参数 ：无
-** 函数说明 ：无
-**************************************************************/
-void Write_Profile_Ampli(uint8_t profile, uint16_t data) {
-	uint8_t profileAddr;
-	uint8_t Profile_data[4] = {0x00, 0x00, 0x00, 0x00}; // 中间变量
-
-	// 为幅度调制时幅度数据为[31:22]位
-	Profile_data[1] = (uint8_t)(data << 6); //[23:22]
-	Profile_data[0] = (uint8_t)(data >> 2); //[31:24]
-
-	profileAddr = PROFILE_ADDR_BASE + profile;
-
-	AD9959_WriteData(profileAddr, 4, Profile_data); // 写入32位数据
-}
-/************************************************************
-** 函数名称 ：void Write_Profile_Phase(uint8_t profile,uint16_t data)
-** 函数功能 ：写Profile寄存器
-** 入口参数 ：profile:	profile号(0~14)
-                            data:	 写入相位,范围：0~16383
-** 出口参数 ：无
-** 函数说明 ：无
-**************************************************************/
-void Write_Profile_Phase(uint8_t profile, uint16_t data) {
-	uint8_t profileAddr;
-	uint8_t Profile_data[4] = {0x00, 0x00, 0x00, 0x00}; // 中间变量
-
-	// 为相位调制时相位数据为[31:18]位
-	Profile_data[1] = (uint8_t)(data << 2); //[23:18]
-	Profile_data[0] = (uint8_t)(data >> 6); //[31:24]
-
-	profileAddr = PROFILE_ADDR_BASE + profile;
-
-	AD9959_WriteData(profileAddr, 4, Profile_data); // 写入32位数据
+	    (uint32_t)f * 8.589934592; // The input frequency factor is divided into
+	                               // four bytes.  8.589934592=(2^32)/500000000
+	fWord[3] = (uint8_t)Temp;
+	fWord[2] = (uint8_t)(Temp >> 8);
+	fWord[1] = (uint8_t)(Temp >> 16);
+	fWord[0] = (uint8_t)(Temp >> 24);
 }
 
-/************************************************************
-** 函数名称 ：void AD9959_Set_Fre(uint8_t Channel,uint32_t Freq)
-** 函数功能 ：设置通道的输出频率
-** 入口参数 ：Channel:  输出通道  CH0-CH3
-                         Freq:     输出频率，范围0~200 000 000 Hz
-** 出口参数 ：无
-** 函数说明 ：无
-**************************************************************/
-void AD9959_Set_Fre(uint8_t Channel, uint32_t Freq) {
-	uint8_t CHANNEL[1] = {0x00};
-
-	CHANNEL[0] = Channel;
-	AD9959_WriteData(CSR_ADD, 1, CHANNEL); // 控制寄存器写入CHn通道，选择CHn
-	Write_CFTW0(Freq);                     // 输出CHn设定频率
+void Amp2Word(uint16_t A, uint8_t* AWord) {
+	// AWord 3 bytes
+	uint16_t Temp;
+	Temp = (uint16_t)A | 0x1000; // Enable amplitude multiplier
+	AWord[2] = (uint8_t)Temp;
+	AWord[1] = (uint8_t)(Temp >> 8);
+	AWord[0] = 0x00;
 }
 
-/************************************************************
-** 函数名称 ：void AD9959_Set_Amp(uint8_t Channel, uint16_t Ampli)
-** 函数功能 ：设置通道的输出幅度
-** 入口参数 ：Channel:  输出通道 CH0-CH3
-                            Ampli:
-输出幅度,范围0~1023，控制值0~1023对应输出幅度0~500mVpp左右
-** 出口参数 ：无
-** 函数说明 ：无
-**************************************************************/
-void AD9959_Set_Amp(uint8_t Channel, uint16_t Ampli) {
-	uint8_t CHANNEL[1] = {0x00};
-
-	CHANNEL[0] = Channel;
-	AD9959_WriteData(CSR_ADD, 1, CHANNEL); // 控制寄存器写入CHn通道，选择CHn
-	Write_ACR(Ampli);                      //	CHn设定幅度
-}
-
-/************************************************************
-** 函数名称 ：void AD9959_Set_Phase(uint8_t Channel,uint16_t Phase)
-** 函数功能 ：设置通道的输出相位
-** 入口参数 ：Channel:  输出通道 CH0-CH3
-                            Phase: 输出相位,范围：0~16383(对应角度：0°~360°)
-** 出口参数 ：无
-** 函数说明 ：无
-**************************************************************/
-void AD9959_Set_Phase(uint8_t Channel, uint16_t Phase) {
-	uint8_t CHANNEL[1] = {0x00};
-	CHANNEL[0] = Channel;
-
-	AD9959_WriteData(CSR_ADD, 1, CHANNEL); // 控制寄存器写入CHn通道，选择CHn
-	Write_CPOW0(Phase);                    // CHn设定相位
-}
-
-/************************************************************
-** 函数名称 ：void AD9959_Modulation_Init(uint8_t Channel,uint8_t
-Modulation,uint8_t Sweep_en,uint8_t Nlevel)
-** 函数功能 ：设置各个通道的调制模式。
-** 入口参数 ： Channel:  	输出通道 CH0-CH3
-                            Modulation:	调制模式DISABLE_Mod，ASK，FSK，PSK
-                            Sweep_en:		线性扫描模式
-SWEEP_ENABLE启用、SWEEP_DISABLE不启用；启用时Nlevel只能是LEVEL_MOD_2 Nlevel：
-调制电平选择 LEVEL_MOD_2、4、8、16
-** 出口参数 ：无
-** 函数说明
-：如将调制电平设置为2电平调制时，对应的P0-P3引脚上的高低电平分别控制CH0-CH3通道(如果对应通道开启的话)
-                            如将调制电平设置为4电平调制时，对应的P0，P1和P2,P3引脚上的高低电平分别控制CH0-CH1通道(如果对应通道开启的话)
-                            由于AD9959只有P0-P3,4个用于调制控制的引脚，因此输出在4电平调制时，只能有2个通道同时设置为调制输出；
-                            8电平和16电平调制时，只能有1个通道同时设置为调制输出。请适当设置几电平调制以满足应用需求。
-
-**注意！！！：设置成4电平调制时，输出通道只能选择CH0-1
-                            设置成8,16电平调制时，输出通道只能选择CH0
-                            本函数未做任意通道兼容，具体方法请参考AD9959芯片手册22-23页，操作FR1[14:12]为对应值。
-**************************************************************/
-void AD9959_Modulation_Init(uint8_t Channel,
-                            uint8_t Modulation,
-                            uint8_t Sweep_en,
-                            uint8_t Nlevel) {
-	uint8_t i = 0;
-	uint8_t CHANNEL[1] = {0x00};
-	uint8_t FR1_data[3];
-	uint8_t FR2_data[2];
-	uint8_t CFR_data[3];
-	for (i = 0; i < 3; i++) // 设置默认值
-	{
-		FR1_data[i] = FR1_DATA[i];
-		CFR_data[i] = CFR_DATA[i];
-	}
-	FR2_data[0] = FR2_DATA[0];
-	FR2_data[1] = FR2_DATA[1];
-
-	CHANNEL[0] = Channel;
-	AD9959_WriteData(
-	    CSR_ADD, 1,
-	    CHANNEL); // 控制寄存器写入CHn通道，选择CHn；以下设置均针对CHn
-
-	FR1_data[1] = Nlevel;
-	CFR_data[0] = Modulation;
-	CFR_data[1] |= Sweep_en;
-	CFR_data[2] = 0x00;
-
-	if (Channel != 0) // 有通道被使能
-	{
-		AD9959_WriteData(FR1_ADD, 3, FR1_data); // 写功能寄存器1
-		AD9959_WriteData(FR2_ADD, 2, FR2_data); // 写功能寄存器1
-		AD9959_WriteData(CFR_ADD, 3, CFR_data); // 写通道功能寄存器
-	}
-}
-
-/************************************************************
-** 函数名称 ：void AD9959_SetFSK(uint8_t Channel, uint32_t *data,uint16_t Phase)
-** 函数功能 ：设置FSK调制的参数
-** 入口参数 ：Channel:  输出通道 CH0-CH3
-                            *data:	调整频率数据的起始地址
-                            Phase:	输出相位,范围：0~16383(对应角度：0°~360°)
-** 出口参数 ：无
-** 函数说明 ：FSK时信号幅度默认为最大
-**************************************************************/
-void AD9959_SetFSK(uint8_t Channel, uint32_t* data, uint16_t Phase) {
-	uint8_t i = 0;
-	uint8_t CHANNEL[1] = {0x00};
-
-	CHANNEL[0] = Channel;
-	AD9959_WriteData(
-	    CSR_ADD, 1,
-	    CHANNEL); // 控制寄存器写入CHn通道，选择CHn；以下设置均针对CHn
-	Write_CPOW0(Phase); // 设置相位
-
-	Write_CFTW0(data[0]);
-	for (i = 0; i < 15; i++)
-		Write_Profile_Fre(i, data[i + 1]);
-}
-
-/************************************************************
-** 函数名称 ：void AD9959_SetASK(uint8_t Channel, uint32_t *data,uint32_t
-fre,uint16_t Phase)
-** 函数功能 ：设置ASK调制的参数
-** 入口参数 ：Channel:  输出通道 CH0-CH3
-                            *data: 调整幅度数据的起始地址
-                            Freq:		输出频率，范围0~200 000 000 Hz
-                            Phase:	输出相位,范围：0~16383(对应角度：0°~360°)
-** 出口参数 ：无
-** 函数说明 ：无
-**************************************************************/
-void AD9959_SetASK(uint8_t Channel,
-                   uint16_t* data,
-                   uint32_t fre,
-                   uint16_t Phase) {
-	uint8_t i = 0;
-	uint8_t CHANNEL[1] = {0x00};
-
-	CHANNEL[0] = Channel;
-	AD9959_WriteData(
-	    CSR_ADD, 1,
-	    CHANNEL); // 控制寄存器写入CHn通道，选择CHn；以下设置均针对CHn
-	Write_CFTW0(fre);   // 设置频率
-	Write_CPOW0(Phase); // 设置相位
-
-	Write_ACR(data[0]);
-	for (i = 0; i < 15; i++)
-		Write_Profile_Ampli(i, data[i + 1]);
-}
-
-/************************************************************
-** 函数名称 ：void AD9959_SetPSK(uint8_t Channel, uint16_t *data,uint32_t
-fre,uint16_t Phase)
-** 函数功能 ：设置PSK调制的参数
-** 入口参数 ：Channel:  输出通道 CH0-CH3
-                            *data:	调整相位数据的起始地址
-                            Freq:		输出频率，范围0~200 000 000 Hz
-** 出口参数 ：无
-** 函数说明 ：无
-**************************************************************/
-void AD9959_SetPSK(uint8_t Channel, uint16_t* data, uint32_t Freq) {
-	uint8_t i = 0;
-	uint8_t CHANNEL[1] = {0x00};
-
-	CHANNEL[0] = Channel;
-	AD9959_WriteData(
-	    CSR_ADD, 1,
-	    CHANNEL); // 控制寄存器写入CHn通道，选择CHn；以下设置均针对CHn
-	Write_CFTW0(Freq);
-
-	Write_CPOW0(data[0]);
-	for (i = 0; i < 15; i++)
-		Write_Profile_Phase(i, data[i + 1]);
-}
-
-/************************************************************
-** 函数名称 ：void AD9959_SetFre_Sweep(uint8_t Channel, uint32_t s_data,uint32_t
-e_data,uint8_t fsrr,uint8_t rsrr,uint32_t r_delta,uint32_t f_delta,uint16_t
-Phase)
-** 函数功能 ：设置线性扫频的参数
-** 入口参数 ：Channel:  输出通道 CH0-CH3
-                            s_data:	起始频率，范围0~200 000 000 Hz
-                            e_data:	结束频率，范围0~200 000 000 Hz
-                            r_delta:上升步长频率,0~200 000 000Hz
-                            f_delta:下降步长频率,0~200 000 000Hz
-
-                            rsrr:
-上升斜率,范围：1~255，系统时钟为500Mhz时一个控制字约为8ns fsrr:
-下降斜率,范围：1~255 Ampli:
-输出幅度,范围0~1023，控制值0~1023对应输出幅度0~500mVpp左右 Phase:
-输出相位,范围：0~16383(对应角度：0°~360°)
-** 出口参数 ：无
-** 函数说明 ：频点与频点间停留时间 dT = Xsrr*8 单位ns，扫描点数=(起始-结束)/步长
-                            扫频总时间=总扫描频点数*dT
-**************************************************************/
-void AD9959_SetFre_Sweep(uint8_t Channel,
-                         uint32_t s_data,
-                         uint32_t e_data,
-                         uint32_t r_delta,
-                         uint32_t f_delta,
-                         uint8_t rsrr,
-                         uint8_t fsrr,
-                         uint16_t Ampli,
-                         uint16_t Phase) {
-	uint8_t CHANNEL[1] = {0x00};
-	uint32_t Fer_data = 0;
-
-	CHANNEL[0] = Channel;
-	AD9959_WriteData(
-	    CSR_ADD, 1,
-	    CHANNEL); // 控制寄存器写入CHn通道，选择CHn；以下设置均针对CHn
-
-	Write_CPOW0(Phase); // 设置相位
-	Write_ACR(Ampli);   // 幅度设置
-
-	Write_LSRR(rsrr, fsrr); // 斜率
-
-	Fer_data = (uint32_t)r_delta * ACC_FRE_FACTOR; // 频率转换成控制字
-	Write_RDW(Fer_data);                           // 上升步长
-
-	Fer_data = (uint32_t)f_delta * ACC_FRE_FACTOR;
-	Write_FDW(Fer_data); // 下降步长
-
-	Write_CFTW0(s_data);          // 起始频率
-	Write_Profile_Fre(0, e_data); // 结束频率
-}
-
-/************************************************************
-** 函数名称 ：void AD9959_SetAmp_Sweep(uint8_t Channel, uint32_t
-s_Ampli,uint16_t e_Ampli,uint32_t r_delta,uint32_t f_delta,uint8_t rsrr,uint8_t
-fsrr,uint32_t fre,uint16_t Phase)
-** 函数功能 ：设置线性扫幅的参数
-** 入口参数 ：Channel:  输出通道 CH0-CH3
-                            s_Ampli:
-起始幅度，控制值0~1023对应输出幅度0~500mVpp左右 e_Ampli:	结束幅度，
-
-                            r_delta:	上升步长幅度,0~1023
-                            f_delta:	下降步长幅度,0~1023
-
-                            rsrr:
-上升斜率,范围：1~255，系统时钟为500Mhz时一个控制字约为8ns fsrr:
-下降斜率,范围：1~255
-
-                            fre:			输出频率，范围0~200 000 000 Hz
-                            Phase: 输出相位,范围：0~16383(对应角度：0°~360°)
-** 出口参数 ：无
-** 函数说明 ：幅点与幅点间停留时间 dT = Xsrr*8 单位ns；扫描点数=(起始-结束)/步长
-                            扫幅总时间=总扫描幅点数*dT
-**************************************************************/
-void AD9959_SetAmp_Sweep(uint8_t Channel,
-                         uint32_t s_Ampli,
-                         uint16_t e_Ampli,
-                         uint32_t r_delta,
-                         uint32_t f_delta,
-                         uint8_t rsrr,
-                         uint8_t fsrr,
-                         uint32_t fre,
-                         uint16_t Phase) {
-	uint8_t CHANNEL[1] = {0x00};
-	uint8_t ACR_data[3] = {0x00, 0x00, 0x00};
-
-	CHANNEL[0] = Channel;
-	AD9959_WriteData(
-	    CSR_ADD, 1,
-	    CHANNEL); // 控制寄存器写入CHn通道，选择CHn；以下设置均针对CHn
-
-	Write_CFTW0(fre);   // 幅度频率
-	Write_CPOW0(Phase); // 设置相位
-
-	Write_LSRR(rsrr, fsrr); // 斜率
-
-	Write_RDW(r_delta << 22); // 上升步长
-
-	Write_FDW(f_delta << 22); // 下降步长
-
-	ACR_data[1] = (uint8_t)(s_Ampli >> 8);  // 高位数据
-	ACR_data[2] = (uint8_t)s_Ampli;         // 低位数据
-	AD9959_WriteData(ACR_ADD, 3, ACR_data); // ACR 设定起始幅度
-
-	Write_Profile_Ampli(0, e_Ampli); // 结束幅度
-}
-
-/************************************************************
-** 函数名称 ：void AD9959_SetPhase_Sweep(uint8_t Channel, uint16_t
-s_data,uint16_t e_data,uint16_t r_delta,uint16_t f_delta,uint8_t rsrr,uint8_t
-fsrr,uint32_t fre,uint16_t Ampli)
-** 函数功能 ：设置线性扫相的参数
-** 入口参数 ：Channel:  输出通道 CH0-CH3
-                            s_data:	起始相位，范围：0~16383(对应角度：0°~360°)
-                            e_data:	结束相位，
-                            r_delta:上升步长,范围：0~16383(对应角度：0°~360°)
-                            f_delta:下降步长,
-
-                            rsrr:
-上升斜率,范围：1~255，系统时钟为500Mhz时一个控制字约为8ns fsrr:
-下降斜率,范围：1~255 fre:		输出频率，范围0~200 000 000 Hz Ampli:
-输出幅度,范围0~1023，控制值0~1023对应输出幅度0~500mVpp左右
-** 出口参数 ：无
-** 函数说明 ：频点与频点间停留时间 dT = Xsrr*8 单位ns；扫描点数=(起始-结束)/步长
-                            扫频总时间=总扫描频点数*dT
-**************************************************************/
-void AD9959_SetPhase_Sweep(uint8_t Channel,
-                           uint16_t s_data,
-                           uint16_t e_data,
-                           uint16_t r_delta,
-                           uint16_t f_delta,
-                           uint8_t rsrr,
-                           uint8_t fsrr,
-                           uint32_t fre,
-                           uint16_t Ampli) {
-	uint8_t CHANNEL[1] = {0x00};
-
-	CHANNEL[0] = Channel;
-	AD9959_WriteData(
-	    CSR_ADD, 1,
-	    CHANNEL); // 控制寄存器写入CHn通道，选择CHn；以下设置均针对CHn
-
-	Write_CFTW0(fre); // 幅度频率
-	Write_ACR(Ampli); // 幅度设置
-
-	Write_LSRR(rsrr, fsrr); // 斜率
-
-	Write_RDW(r_delta << 18); // 上升步长
-
-	Write_FDW(f_delta << 18); // 下降步长
-
-	Write_CPOW0(s_data);            // 起始相位
-	Write_Profile_Phase(0, e_data); // 结束相位
+void Phase2Word(uint16_t Phase, uint8_t* PWord) {
+	// PWord 2 bytes
+	uint16_t Temp =
+	    (uint16_t)(0.02197265625 * Phase); // 360/2^32 = 0.02197265625
+	PWord[1] = (uint8_t)Temp;
+	PWord[0] = (uint8_t)(Temp >> 8);
 }
