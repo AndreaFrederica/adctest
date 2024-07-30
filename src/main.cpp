@@ -258,12 +258,12 @@ int prog_sd_attenuation = 0;           //?dB
 int prog_wireless_fc_freq = 30;        //? Mhz
 int prog_wireless_sd_val = 100;        //? mV
 int prog_wireless_am_range = 30;       //? 30%
-int prog_wireless__sd_delay = 50;      //? 50ns
-int prog_wireless__sd_attenuation = 0; //?dB
-int prog_wireless__sm_phase = 0;       //? deg
+int prog_wireless_sd_delay = 50;      //? 50ns
+int prog_wireless_sd_attenuation = 0; //?dB
+int prog_wireless_sm_phase = 0;       //? deg
 
-int select_x = 0;
 int select_y = 0;
+bool flag_edit_mode = false;
 
 void initSelectRow(bool update) {
 	for (int i = 1; i <= 5; i++) {
@@ -278,20 +278,151 @@ void initSelectRow(bool update) {
 }
 
 void ec11Add() {
-	if (select_y >= 10) {
-		select_y = 0;
+	if (flag_edit_mode) {
+		switch (select_y) {
+		case 0:
+			if (prog_output_mode == AM) {
+				prog_output_mode = CW;
+			} else {
+				prog_output_mode = AM;
+			}
+			break;
+		case 1:
+			if (prog_sd_val < 1000){
+				prog_sd_val += 100;
+			}
+			break;
+		case 2:
+			if (prog_am_range < 90){
+				prog_am_range += 10;
+			}
+			break;
+		case 3:
+			if (prog_sd_delay < 200){
+				prog_sd_delay += 30;
+			}
+			break;
+		case 4:
+			if (prog_sd_attenuation < 20){
+				prog_sd_attenuation += 2;
+			}
+			break;
+		case 5:
+			if (prog_wireless_fc_freq < 40){
+				prog_wireless_fc_freq += 1;
+			}
+			break;
+		case 6:
+			if (prog_wireless_sd_val < 1000){
+				prog_wireless_sd_val += 100;
+			}
+			break;
+		case 7:
+			if (prog_wireless_am_range < 90){
+				prog_wireless_am_range += 10;
+			}
+			break;
+		case 8:
+			if (prog_wireless_sd_delay < 200){
+				prog_wireless_sd_delay += 30;
+			}
+			break;
+		case 9:
+			if (prog_wireless_sd_attenuation < 20){
+				prog_wireless_sd_attenuation += 2;
+			}
+			break;
+		case 10:
+			if (prog_wireless_sm_phase < 180){
+				prog_wireless_sm_phase += 10;
+			}
+			break;
+		}
 	} else {
-		select_y++;
+		if (select_y >= 10) {
+			select_y = 0;
+		} else {
+			select_y++;
+		}
 	}
 }
+
 void ec11Minus() {
-	if (select_y <= 0) {
-		select_y = 11;
+	if (flag_edit_mode) {
+		switch (select_y) {
+		case 0:
+			if (prog_output_mode == AM) {
+				prog_output_mode = CW;
+			} else {
+				prog_output_mode = AM;
+			}
+			break;
+		case 1:
+			if (prog_sd_val > 100){
+				prog_sd_val -= 100;
+			}
+			break;
+		case 2:
+			if (prog_am_range > 30){
+				prog_am_range -= 10;
+			}
+			break;
+		case 3:
+			if (prog_sd_delay > 50){
+				prog_sd_delay -= 30;
+			}
+			break;
+		case 4:
+			if (prog_sd_attenuation > 0){
+				prog_sd_attenuation -= 2;
+			}
+			break;
+		case 5:
+			if (prog_wireless_fc_freq > 30){
+				prog_wireless_fc_freq -= 1;
+			}
+			break;
+		case 6:
+			if (prog_wireless_sd_val > 100){
+				prog_wireless_sd_val -= 100;
+			}
+			break;
+		case 7:
+			if (prog_wireless_am_range > 30){
+				prog_wireless_am_range -= 10;
+			}
+			break;
+		case 8:
+			if (prog_wireless_sd_delay > 50){
+				prog_wireless_sd_delay -= 30;
+			}
+			break;
+		case 9:
+			if (prog_wireless_sd_attenuation > 0){
+				prog_wireless_sd_attenuation -= 2;
+			}
+			break;
+		case 10:
+			if (prog_wireless_sm_phase > 0){
+				prog_wireless_sm_phase -= 10;
+			}
+			break;
+		}
 	} else {
-		select_y--;
+		if (select_y <= 0) {
+			select_y = 11;
+		} else {
+			select_y--;
+		}
 	}
 }
 void ec11Click() {
+	if (flag_edit_mode) {
+		flag_edit_mode = false;
+		// TODO 在这里调用DSP初始化函数
+	} else {
+		flag_edit_mode = true;
+	}
 	uart_log_debug("EC11_Enter!"); // 按下确认键
 }
 
@@ -384,39 +515,41 @@ static char SelectedCursor = 'O';
 
 void displaySelectRow() {
 	initSelectRow(false);
+	static uint16_t fg_color = WHITE;
+	static uint16_t bg_color = BLUE;
 	switch (select_y) {
 	case 0:
-		SetChar(1, 0, SelectedCursor, WHITE, BLUE);
+		SetChar(1, 0, SelectedCursor, fg_color, bg_color);
 		break;
 	case 1:
-		SetChar(2, 0, SelectedCursor, WHITE, BLUE);
+		SetChar(2, 0, SelectedCursor, fg_color, bg_color);
 		break;
 	case 2:
-		SetChar(3, 0, SelectedCursor, WHITE, BLUE);
+		SetChar(3, 0, SelectedCursor, fg_color, bg_color);
 		break;
 	case 3:
-		SetChar(4, 0, SelectedCursor, WHITE, BLUE);
+		SetChar(4, 0, SelectedCursor, fg_color, bg_color);
 		break;
 	case 4:
-		SetChar(5, 0, SelectedCursor, WHITE, BLUE);
+		SetChar(5, 0, SelectedCursor, fg_color, bg_color);
 		break;
 	case 5:
-		SetChar(7, 0, SelectedCursor, WHITE, BLUE);
+		SetChar(7, 0, SelectedCursor, fg_color, bg_color);
 		break;
 	case 6:
-		SetChar(8, 0, SelectedCursor, WHITE, BLUE);
+		SetChar(8, 0, SelectedCursor, fg_color, bg_color);
 		break;
 	case 7:
-		SetChar(9, 0, SelectedCursor, WHITE, BLUE);
+		SetChar(9, 0, SelectedCursor, fg_color, bg_color);
 		break;
 	case 8:
-		SetChar(10, 0, SelectedCursor, WHITE, BLUE);
+		SetChar(10, 0, SelectedCursor, fg_color, bg_color);
 		break;
 	case 9:
-		SetChar(11, 0, SelectedCursor, WHITE, BLUE);
+		SetChar(11, 0, SelectedCursor, fg_color, bg_color);
 		break;
 	case 10:
-		SetChar(12, 0, SelectedCursor, WHITE, BLUE);
+		SetChar(12, 0, SelectedCursor, fg_color, bg_color);
 		break;
 
 	default:
@@ -426,6 +559,8 @@ void displaySelectRow() {
 }
 
 void displayProgInfo() {
+	uint16_t fg_color = WHITE;
+	uint16_t bg_color = BLACK;
 	char buffer[20] = {0};
 	auto createString = [](int flag) -> const char* {
 		if (flag == AM) {
@@ -434,91 +569,97 @@ void displayProgInfo() {
 			return "CW";
 		}
 	};
-	lcd_setString(1, 20, WHITE, BLACK, createString(prog_output_mode));
+	lcd_setString(1, 20,fg_color, bg_color, createString(prog_output_mode));
 	strcpy(buffer, "");
 	sprintf(buffer, "%dmV", prog_sd_val);
-	lcd_setString(2, 20, WHITE, BLACK, "           ");
-	lcd_setString(2, 20, WHITE, BLACK, buffer);
+	lcd_setString(2, 20,WHITE, BLACK, "           ");
+	lcd_setString(2, 20,fg_color, bg_color, buffer);
 	strcpy(buffer, "");
 	sprintf(buffer, "%d%%", prog_am_range);
-	lcd_setString(3, 20, WHITE, BLACK, "           ");
-	lcd_setString(3, 20, WHITE, BLACK, buffer);
+	lcd_setString(3, 20,WHITE, BLACK, "           ");
+	lcd_setString(3, 20,fg_color, bg_color, buffer);
 	strcpy(buffer, "");
 	sprintf(buffer, "%dns", prog_sd_delay);
-	lcd_setString(4, 20, WHITE, BLACK, "           ");
-	lcd_setString(4, 20, WHITE, BLACK, buffer);
+	lcd_setString(4, 20,WHITE, BLACK, "           ");
+	lcd_setString(4, 20,fg_color, bg_color, buffer);
 	strcpy(buffer, "");
 	sprintf(buffer, "%ddB", prog_sd_attenuation);
-	lcd_setString(5, 20, WHITE, BLACK, "           ");
-	lcd_setString(5, 20, WHITE, BLACK, buffer);
+	lcd_setString(5, 20,WHITE, BLACK, "           ");
+	lcd_setString(5, 20,fg_color, bg_color, buffer);
 	strcpy(buffer, "");
 	sprintf(buffer, "%dMHz", prog_wireless_fc_freq);
-	lcd_setString(7, 20, WHITE, BLACK, "           ");
-	lcd_setString(7, 20, WHITE, BLACK, buffer);
+	lcd_setString(7, 20,WHITE, BLACK, "           ");
+	lcd_setString(7, 20,fg_color, bg_color, buffer);
 	strcpy(buffer, "");
 	sprintf(buffer, "%dmV", prog_wireless_sd_val);
-	lcd_setString(8, 20, WHITE, BLACK, "           ");
-	lcd_setString(8, 20, WHITE, BLACK, buffer);
+	lcd_setString(8, 20,WHITE, BLACK, "           ");
+	lcd_setString(8, 20,fg_color, bg_color, buffer);
 	strcpy(buffer, "");
 	sprintf(buffer, "%d%%", prog_wireless_am_range);
-	lcd_setString(9, 20, WHITE, BLACK, "           ");
-	lcd_setString(9, 20, WHITE, BLACK, buffer);
+	lcd_setString(9, 20,WHITE, BLACK, "           ");
+	lcd_setString(9, 20,fg_color, bg_color, buffer);
 	strcpy(buffer, "");
-	sprintf(buffer, "%dns", prog_wireless__sd_delay);
-	lcd_setString(10, 20, WHITE, BLACK, "           ");
-	lcd_setString(10, 20, WHITE, BLACK, buffer);
+	sprintf(buffer, "%dns", prog_wireless_sd_delay);
+	lcd_setString(10, 20,WHITE, BLACK, "           ");
+	lcd_setString(10, 20,fg_color, bg_color, buffer);
 	strcpy(buffer, "");
-	sprintf(buffer, "%ddB", prog_wireless__sd_attenuation);
-	lcd_setString(11, 20, WHITE, BLACK, "           ");
-	lcd_setString(11, 20, WHITE, BLACK, buffer);
+	sprintf(buffer, "%ddB", prog_wireless_sd_attenuation);
+	lcd_setString(11, 20,WHITE, BLACK, "           ");
+	lcd_setString(11, 20,fg_color, bg_color, buffer);
 	strcpy(buffer, "");
-	sprintf(buffer, "%d", prog_wireless__sm_phase);
-	lcd_setString(12, 20, WHITE, BLACK, "           ");
-	lcd_setString(12, 20, WHITE, BLACK, buffer);
+	sprintf(buffer, "%d", prog_wireless_sm_phase);
+	lcd_setString(12, 20,WHITE, BLACK, "           ");
+	lcd_setString(12, 20,fg_color, bg_color, buffer);
 	strcpy(buffer, "");
+	fg_color = WHITE;
+	bg_color = LIGHTBLUE;
+	if (flag_edit_mode) {
+		bg_color = RED;
+	}
 	switch (select_y) {
 	case 0:
-		lcd_setString(1, 20, WHITE, LIGHTBLUE, createString(prog_output_mode));
+		lcd_setString(1, 20, fg_color, bg_color,
+		              createString(prog_output_mode));
 		break;
 	case 1:
 		sprintf(buffer, "%dmV", prog_sd_val);
-		lcd_setString(2, 20, WHITE, LIGHTBLUE, buffer);
+		lcd_setString(2, 20, fg_color, bg_color, buffer);
 		break;
 	case 2:
 		sprintf(buffer, "%d%%", prog_am_range);
-		lcd_setString(3, 20, WHITE, LIGHTBLUE, buffer);
+		lcd_setString(3, 20, fg_color, bg_color, buffer);
 		break;
 	case 3:
 		sprintf(buffer, "%dns", prog_sd_delay);
-		lcd_setString(4, 20, WHITE, LIGHTBLUE, buffer);
+		lcd_setString(4, 20, fg_color, bg_color, buffer);
 		break;
 	case 4:
 		sprintf(buffer, "%ddB", prog_sd_attenuation);
-		lcd_setString(5, 20, WHITE, LIGHTBLUE, buffer);
+		lcd_setString(5, 20, fg_color, bg_color, buffer);
 		break;
 	case 5:
 		sprintf(buffer, "%dMHz", prog_wireless_fc_freq);
-		lcd_setString(7, 20, WHITE, LIGHTBLUE, buffer);
+		lcd_setString(7, 20, fg_color, bg_color, buffer);
 		break;
 	case 6:
 		sprintf(buffer, "%dmV", prog_wireless_sd_val);
-		lcd_setString(8, 20, WHITE, LIGHTBLUE, buffer);
+		lcd_setString(8, 20, fg_color, bg_color, buffer);
 		break;
 	case 7:
 		sprintf(buffer, "%d%%", prog_wireless_am_range);
-		lcd_setString(9, 20, WHITE, LIGHTBLUE, buffer);
+		lcd_setString(9, 20, fg_color, bg_color, buffer);
 		break;
 	case 8:
-		sprintf(buffer, "%dns", prog_wireless__sd_delay);
-		lcd_setString(10, 20, WHITE, LIGHTBLUE, buffer);
+		sprintf(buffer, "%dns", prog_wireless_sd_delay);
+		lcd_setString(10, 20, fg_color, bg_color, buffer);
 		break;
 	case 9:
-		sprintf(buffer, "%ddB", prog_wireless__sd_attenuation);
-		lcd_setString(11, 20, WHITE, LIGHTBLUE, buffer);
+		sprintf(buffer, "%ddB", prog_wireless_sd_attenuation);
+		lcd_setString(11, 20, fg_color, bg_color, buffer);
 		break;
 	case 10:
-		sprintf(buffer, "%d", prog_wireless__sm_phase);
-		lcd_setString(12, 20, WHITE, LIGHTBLUE, buffer);
+		sprintf(buffer, "%d", prog_wireless_sm_phase);
+		lcd_setString(12, 20, fg_color, bg_color, buffer);
 		break;
 	}
 	UpdateScreen();
