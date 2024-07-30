@@ -2,7 +2,7 @@
  * @Author: AndreaFrederica andreafrederica@outlook.com
  * @Date: 2024-07-26 18:50:12
  * @LastEditors: AndreaFrederica andreafrederica@outlook.com
- * @LastEditTime: 2024-07-29 16:48:56
+ * @LastEditTime: 2024-07-30 11:26:27
  * @FilePath: \adctest\lib\EasyLCD\AndreaUI.h
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置
  * 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
@@ -66,6 +66,8 @@ void LCD_ShowCharPlus(uint16_t x,
                       uint8_t mode);
 
 void lcd_print_basic(const char* text);
+void lcd_setString(int y,int x,uint16_t fg_color, uint16_t bg_color, const char* text);
+
 
 void lcd_print(const char* text, const char* end = "\r\n");
 void lcd_log_trace(const char* message, const char* end = "\r\n");
@@ -117,6 +119,9 @@ public:
 	void setPixel(int x, int y, uint16_t pixel);
 	void setPalette(int key, uint16_t color);
 	void drawSelf();
+	void forceDrawSelf();
+	void setX(int x);
+	void setY(int y);
 	SpiritType type;
 	SpiritColorDeep color_deep;
 	int width;
@@ -139,7 +144,16 @@ private:
 	bool get1BitChange(int x, int y);
 };
 bool IsPixelCoveredBySprite(int x, int y);
+struct CharBlock {
+    int x;
+    int y;
+
+    // 构造函数声明
+    CharBlock(int xCoord, int yCoord);
+};
 // bool PixelCoveredBySprite[SCREEN_WIDTH][SCREEN_HEIGHT];//TODO 精灵绘制加速
 extern std::list<Spirit> spirit_bucket;
+extern std::list<CharBlock> changed_block;
 void DrawSprites();
+
 #endif

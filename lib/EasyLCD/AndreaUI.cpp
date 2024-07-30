@@ -9,6 +9,11 @@ TextCell (*currentBuffer)[COLS] = buffer1;
 TextCell (*nextBuffer)[COLS] = buffer2;
 std::list<Spirit> spirit_bucket;
 bool Spirit::isChanged = true;
+std::list<CharBlock> changed_block;
+
+CharBlock::CharBlock(int xCoord, int yCoord)
+    : x(xCoord)
+    , y(yCoord) {}
 
 void InitializeBuffer(TextCell buffer[ROWS][COLS],
                       char character,
@@ -64,13 +69,23 @@ void UpdateScreen() {
 			    currentCell.backgroundColor != nextCell.backgroundColor) {
 
 				LCD_ShowCharPlus(x, y, nextCell.foregroundColor,
-				             nextCell.backgroundColor, nextCell.character,
-				             CHAR_HEIGHT, 0);
+				                 nextCell.backgroundColor, nextCell.character,
+				                 CHAR_HEIGHT, 0);
 
 				// 更新当前缓冲区
 				currentBuffer[row][col] = nextCell;
 			}
 		}
+	}
+	for (auto it = changed_block.begin(); it != changed_block.end();) {
+		// 假设 currentBuffer 是已定义的二维数组
+		LCD_ShowCharPlus(it->x, it->y,
+		                 currentBuffer[it->x][it->y].foregroundColor,
+		                 currentBuffer[it->x][it->y].backgroundColor,
+		                 currentBuffer[it->x][it->y].character, CHAR_HEIGHT, 0);
+
+		// 删除当前元素并更新迭代器
+		it = changed_block.erase(it);
 	}
 
 	// 绘制精灵
@@ -116,9 +131,9 @@ void LCD_ShowCharPlus(uint16_t x,
 			for (t = 0; t < size / 2; t++) {
 				POINT_COLOR = fc;
 				if (temp & 0x01)
-					if (IsPixelCoveredBySprite(x + t, y + pos)){
+					if (IsPixelCoveredBySprite(x + t, y + pos)) {
 						continue;
-					}else{
+					} else {
 						LCD_DrawPoint(x + t, y + pos); // 画一个点
 					}
 				temp >>= 1;
@@ -245,6 +260,21 @@ void lcd_print_basic(const char* text) {
 	UpdateScreen();
 }
 
+void lcd_setString(int y,int x,uint16_t fg_color, uint16_t bg_color, const char* text){
+	int cursorX = x;
+	//int cursorY = y;
+	while (*text)
+	{
+		if(cursorX >=SCREEN_WIDTH){
+			break;
+		}else{
+			SetChar(y,cursorX,*text,fg_color,bg_color);
+			cursorX ++;
+			text++;
+		}
+	}
+}
+
 void lcd_print(const char* text, const char* end) {
 	lcd_print_basic(text);
 	lcd_print_basic(end);
@@ -357,6 +387,7 @@ void Spirit::setAllChanged() {
 	for (int pos = 0; pos < width * height / 8; pos++) {
 		A_changed_pixels[pos] = 255;
 	}
+	isChanged = true;
 }
 void Spirit::set1Bit(int x, int y, bool key) {
 	int pos = x * (height - 1) + y;
@@ -443,6 +474,33 @@ void Spirit::drawSelf() {
 	}
 }
 
+void Spirit::forceDrawSelf() {
+	// uart_log_debug("0000");
+	int x, y;
+	if (color_deep == C1BIT) {
+		int len = height * width;
+		int pos;
+		for (int y = 0; y < height; y++) {
+			// uart_log_debug("11111");
+			for (int x = 0; x < width; x++) {
+				pos = x * (height - 1) + y;
+				LCD_DrawPixel(pos_x + x, pos_y + y,
+				              palette[(int)get1Bit(x, y)]);
+			}
+		}
+	} else if (color_deep == C16BIT) {
+		int len = height * width;
+		int pos;
+		for (int y = 0; y < height; y++) {
+			for (int x = 0; x < width; x++) {
+				pos = x * (height - 1) + y;
+				//? 16Bit直接写入保存的颜色
+				LCD_DrawPixel(pos_x + x, pos_y + y, P_16BIT[pos]);
+			}
+		}
+	}
+}
+
 void Spirit::setStaticPixels(uint8_t* p1bit) {
 	uart_log_debug("setOUT");
 	isChanged = true;
@@ -466,6 +524,64 @@ void Spirit::setStaticPixels(uint16_t* p16bit) {
 	// 	this->A_changed_pixels[i] = true;
 	// }
 	setAllChanged();
+}
+
+void Spirit::setX(int x) {
+	bool flag = false;
+	for (int row = 0; row < ROWS; row++) {
+		for (int col = 0; col < COLS; col++) {
+			int x = col * CHAR_WIDTH;
+			int y = row * CHAR_HEIGHT;
+			flag = false;
+			// 检查该像素是否被精灵遮挡
+			if (IsPixelCoveredBySprite(x, y)) {
+				flag = true;
+			}
+			if (IsPixelCoveredBySprite(x + 8, y)) {
+				flag = true;
+			}
+			if (IsPixelCoveredBySprite(x, y + 16)) {
+				flag = true;
+			}
+			if (IsPixelCoveredBySprite(x + 8, y + 16)) {
+				flag = true;
+			}
+			if (flag) {
+				changed_block.emplace_back(row, col);
+			}
+		}
+	}
+	pos_x = x;
+	UpdateScreen();
+}
+
+void Spirit::setY(int y) {
+	bool flag = false;
+	for (int row = 0; row < ROWS; row++) {
+		for (int col = 0; col < COLS; col++) {
+			int x = col * CHAR_WIDTH;
+			int y = row * CHAR_HEIGHT;
+			flag = false;
+			// 检查该像素是否被精灵遮挡
+			if (IsPixelCoveredBySprite(x, y)) {
+				flag = true;
+			}
+			if (IsPixelCoveredBySprite(x + 8, y)) {
+				flag = true;
+			}
+			if (IsPixelCoveredBySprite(x, y + 16)) {
+				flag = true;
+			}
+			if (IsPixelCoveredBySprite(x + 8, y + 16)) {
+				flag = true;
+			}
+			if (flag) {
+				changed_block.emplace_back(row, col);
+			}
+		}
+	}
+	pos_y = y;
+	UpdateScreen();
 }
 
 bool IsPixelCoveredBySprite(int x, int y) {
