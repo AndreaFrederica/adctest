@@ -112,9 +112,11 @@ void Intserve(void) {
 **************************************************************/
 void IntReset(void) {
 	Reset = 0;
-	delay1(1);
+	//delay1(1);
+	delay_ms(1);
 	Reset = 1;
-	delay1(30);
+	//delay1(30);
+	delay_ms(30);
 	Reset = 0;
 }
 
@@ -124,9 +126,11 @@ void IntReset(void) {
 **************************************************************/
 void IO_Update(void) {
 	AD_UPDATE = 0;
-	delay1(2);
+	delay_ms(2);
+	//delay1(2);
 	AD_UPDATE = 1;
-	delay1(4);
+	delay_ms(4);
+	//delay1(4);
 	AD_UPDATE = 0;
 }
 

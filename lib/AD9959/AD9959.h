@@ -2,6 +2,7 @@
 #define _AD9959_H_
 #include "ad9959sys.h"
 #include "stdint.h"
+#include <tools.h>
 
 // AD9959管脚宏定义
 #define AD_CS PAout(6)

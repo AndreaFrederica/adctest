@@ -19,6 +19,10 @@ void delay_us(uint32_t us)
     }
 }
 
+void delay_ms(uint32_t ms){
+    delay_us(ms * 1000);
+}
+
 void DWT_Init(void)
 {
     if (!(CoreDebug->DEMCR & CoreDebug_DEMCR_TRCENA_Msk))
