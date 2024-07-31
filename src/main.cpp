@@ -323,7 +323,7 @@ int prog_voltage = 100;         //? 100mV
 int prog_amj = 30;              //? 30%
 int prog_sd_delay = 50;         //? 50ns
 int prog_sd_attenuation = 0;    //?dB
-int prog_freq = 2;              //? Mhz
+int prog_freq = 30;             //? Mhz
 int prog_dm_phase = 0;          //? deg
 int prog_wireless_sm_phase = 0; //? deg
 
@@ -364,8 +364,10 @@ void ec11Add() {
 			}
 			break;
 		case 3:
-			if (prog_amj < 90) {
-				prog_amj += 10;
+			if (prog_output_mode == AM) {
+				if (prog_amj < 90) {
+					prog_amj += 10;
+				}
 			}
 			break;
 		case 4:
@@ -434,8 +436,10 @@ void ec11Minus() {
 			}
 			break;
 		case 3:
-			if (prog_amj > 30) {
-				prog_amj -= 10;
+			if (prog_output_mode == AM) {
+				if (prog_amj > 30) {
+					prog_amj -= 10;
+				}
 			}
 			break;
 		case 4:
@@ -468,25 +472,97 @@ void ec11Minus() {
 	}
 }
 void ec11Click() {
-	if (flag_edit_mode) {
-		flag_edit_mode = false;
-		// TODO 在这里调用DSP初始化函数
-		progUPDATE();
-	} else {
-		flag_edit_mode = true;
+	switch (select_y) {
+	case 3:
+		if (prog_output_mode == AM) {
+			if (flag_edit_mode) {
+				flag_edit_mode = false;
+			} else {
+				flag_edit_mode = true;
+			}
+		}
+		break;
+
+	default:
+		if (flag_edit_mode) {
+			flag_edit_mode = false;
+		} else {
+			flag_edit_mode = true;
+		}
+		break;
 	}
+	progUPDATE();
 	// uart_log_debug("EC11_Enter!"); // 按下确认键
 }
 
 void progUPDATE() {
 	// AD9959_Set_Fre(CH0, prog_wireless_fc_freq * 10000);
-	Write_Frequence(0, prog_freq * 1000000);
-	// IO_Update();
-	setDacOutput(DAC_CHANNEL_1, 2040 * prog_amj / 100);
-	Write_Phase(0, prog_wireless_sm_phase);
-	Write_Amplitude(2, prog_sd_attenuation);
-	Write_Amplitude(3, prog_sd_attenuation);
-	// setDacOutput(DAC_CHANNEL_1, 2048);
+	// Write_Frequence(0, prog_freq * 1000000);
+	// // IO_Update();
+	// setDacOutput(DAC_CHANNEL_1, 2040 * prog_amj / 100);
+	// Write_Phase(0, prog_wireless_sm_phase);
+	// Write_Amplitude(2, prog_sd_attenuation);
+	// Write_Amplitude(3, prog_sd_attenuation);
+	// // setDacOutput(DAC_CHANNEL_1, 2048);
+	setAD9959();
+}
+
+void setAD9959() {
+	static int f30_val_bata = 5;       //? 放大倍数
+	static int f2_val_bata = 5;        //? 放大倍数
+	static uint32_t am_freq = 2000000; //? 2M
+
+	int ch_30M_raw_amplitude = 0; //? 载波原始幅值
+	int ch_2M_raw_amplitude = 0;  //? 正弦调制信号原始幅值
+	int ch_2M_sm_phase = 0;       //? 对于AM 2M调制信号 使用相位计算
+	double amplitudeX = 0;        //? 衰减系数
+	//! 30M载波原始幅值
+	ch_30M_raw_amplitude = (5.78696 * prog_voltage) / f30_val_bata;
+	if (ch_30M_raw_amplitude > 1023)
+		ch_30M_raw_amplitude = 1023;
+	//! 2M调制信号原始值
+	ch_2M_raw_amplitude = (4092 * prog_amj) / f2_val_bata / 100;
+	// char buf[10];
+	// sprintf(buf,"am%d",ch_2M_raw_amplitude);
+	// uart_log_debug(buf);
+	//! 计算衰减系数
+	amplitudeX = pow(0.635, prog_sd_attenuation * 2);
+	//! 写入幅值
+	Write_AmplitudeU(0, ch_30M_raw_amplitude);
+	Write_AmplitudeU(1, ch_2M_raw_amplitude);
+	Write_AmplitudeU(2, ch_30M_raw_amplitude * amplitudeX);
+	Write_AmplitudeU(3, ch_2M_raw_amplitude * amplitudeX);
+	//! 写入载波频率
+	Write_FrequenceU(0, prog_freq * 1000000);
+	Write_FrequenceU(2, prog_freq * 1000000);
+	Write_FrequenceU(1, am_freq);
+	Write_FrequenceU(3, am_freq);
+	IO_Update();
+	//! Delay 对应ch2,3 （多路径）
+	//! AM调制信号
+	int delta_phase = prog_sd_delay * 2 * 360 / 1000;
+	ch_2M_sm_phase = prog_wireless_sm_phase - delta_phase;
+	if (ch_2M_sm_phase < 0)
+		ch_2M_sm_phase += 360;
+	if (ch_2M_sm_phase > 360)
+		ch_2M_sm_phase -= 360;
+	Write_PhaseU(3, ch_2M_sm_phase); //? 通道3是AM2M信号
+	Write_PhaseU(1, prog_dm_phase);  //! 对于直接路径 直接写入相位
+	IO_Update();
+	//! 30M 载波
+	// TODO 关闭全部两个通道（直通和多径）
+	// TODO 打开直通输出
+	int ch_sm_phase = 0;
+		ch_sm_phase = prog_dm_phase + prog_wireless_sm_phase;
+	if (ch_sm_phase < 0)
+		ch_sm_phase += 360;
+	if (ch_sm_phase > 360)
+		ch_sm_phase -= 360;
+	uint16_t us = 10 * 1 * prog_sd_delay;
+	Write_Phase(0, prog_dm_phase);
+	delay_us(us);
+	// TODO 打开多径输出
+	Write_Phase(2, ch_sm_phase);
 }
 
 extern "C" int main(void) {
@@ -508,10 +584,10 @@ extern "C" int main(void) {
 	MX_UART4_Init(); // 初始化 UART4
 	uart_print("\n");
 	uart_log_info("hello stm32f407");
-	uart_log_info("init dac");
-	DAC_Init();
-	initDacOutput();
-	setDacOutput(DAC_CHANNEL_1, 2040 * prog_amj / 100); //! PA4 CH2是PA5
+	// uart_log_info("init dac");
+	// DAC_Init();
+	// initDacOutput();
+	// setDacOutput(DAC_CHANNEL_1, 2040 * prog_amj / 100); //! PA4 CH2是PA5
 	uart_log_info("init ec11");
 	usedEc11Add = ec11Minus;
 	usedEc11Minus = ec11Add; //? 反过来直觉一点
@@ -580,22 +656,10 @@ extern "C" int main(void) {
 	// IO_Update(); // AD9959更新数据,调用此函数后，上述操作生效！！！！
 
 	Init_AD9959();
-	Write_Frequence(0, prog_freq * 1000000); //?无线载波频率 可调 SM信号
-	Write_Frequence(1, 2000000);             //?
-	Write_Frequence(2, 2000000);             //? 2M载波
-	Write_Frequence(3, 2000000);
-	Write_Amplitude(0, 1023);
-	Write_Amplitude(1, 1023);
-	// Write_Amplitude(2,prog_sd_val * 100); //? 载波有效值
-	Write_Amplitude(2, prog_sd_attenuation); //? 载波有效值
-	Write_Amplitude(3, prog_sd_attenuation);
-	Write_Phase(0, prog_wireless_sm_phase); //? SM信号相位
-	Write_Phase(0, 0);                      //? SM信号相位
-	Write_Phase(3, 0);
+	setAD9959();
 	while (1) {
 		displaySelectRow();
 		displayProgInfo();
-
 		// HAL_Delay(10);
 		// blue_led.blink(10);
 	}
@@ -671,10 +735,12 @@ void displayProgInfo() {
 	strcpy(buffer, "");
 	sprintf(buffer, "%d%%", prog_amj);
 	if (prog_output_mode == AM) {
-		lcd_setString(4, 2, WHITE, BLACK, "AMJ                                    ");
+		lcd_setString(4, 2, WHITE, BLACK,
+		              "AMJ                                    ");
 		lcd_setString(4, 20, fg_color, bg_color, buffer);
 	} else {
-		lcd_setString(4, 2, WHITE, GRAY, "AMJ                                     ");
+		lcd_setString(4, 2, WHITE, GRAY,
+		              "AMJ                                     ");
 		lcd_setString(4, 20, fg_color, GRAY, buffer);
 	}
 	strcpy(buffer, "");

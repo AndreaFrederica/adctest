@@ -78,6 +78,7 @@ void ConvertUint16ToString(uint16_t num, char* str);
 void lcdClrarLen();
 
 void progUPDATE();
+void setAD9959();
 
 
 

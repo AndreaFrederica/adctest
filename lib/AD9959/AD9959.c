@@ -283,6 +283,61 @@ void Write_Phase(uint8_t Channel, uint16_t Phase) {
 	Channel_Select(Channel);
 	WriteData_AD9959(CPOW0_ADD, 2, CPOW0_DATA, 1);
 }
+/**
+ * @brief Writes the frequency value to the specified channel.
+ *
+ * @param Channel The channel number to write the frequency to.(0 to 3)
+ * @param Freq The frequency value to be written.(1 to 500000000)
+ */
+void Write_FrequenceU(uint8_t Channel, uint32_t Freq) {
+	if (Freq > 500000000 || Freq < 1) {
+		Freq = 114514;
+		AD9959_error();
+	}
+
+	uint8_t CFTW0_DATA[4] = {0x00, 0x00, 0x00, 0x00};
+	Freq2Word(Freq, CFTW0_DATA);
+	Channel_Select(Channel);
+	WriteData_AD9959(CFTW0_ADD, 4, CFTW0_DATA,
+	                 0); // CTW0 address 0x04.Output CH0 setting frequency
+}
+
+/**
+ * @brief Writes the amplitude value for a specific channel.
+ *
+ * @param Channel The channel number.(0 to 3)
+ * @param Ampli The amplitude value to be written.(0 to 1023)
+ */
+void Write_AmplitudeU(uint8_t Channel, uint16_t Ampli) {
+	// Ampli的取值在0到1023之间
+	if (Ampli > 1023 || Ampli < 0) {
+		Ampli = 114;
+		AD9959_error();
+	}
+	uint8_t ACR_DATA[3] = {0x00, 0x00,
+	                       0x00}; // default Value = 0x--0000 Rest = 18.91/Iout
+	Amp2Word(Ampli, ACR_DATA);
+	Channel_Select(Channel);
+	WriteData_AD9959(ACR_ADD, 3, ACR_DATA, 0);
+}
+
+/**
+ * @brief Writes the phase value for a specific channel.
+ *
+ * @param Channel The channel number.(0 to 3)
+ * @param Phase The phase value(degree) to be written.(0 to 359)
+ */
+void Write_PhaseU(uint8_t Channel, uint16_t Phase) {
+	// Phase_max = 16383
+	if (Phase > 359 || Phase < 0) {
+		Phase = 0;
+		AD9959_error();
+	}
+	uint8_t CPOW0_DATA[2] = {0x00, 0x00};
+	Phase2Word(Phase, CPOW0_DATA);
+	Channel_Select(Channel);
+	WriteData_AD9959(CPOW0_ADD, 2, CPOW0_DATA, 0);
+}
 
 /**
  * @brief  Select the channel

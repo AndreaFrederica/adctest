@@ -89,6 +89,9 @@ void ReadData_AD9959(uint8_t RegisterAddress, uint8_t NumberofRegisters, uint8_t
 void Write_Frequence(uint8_t Channel, uint32_t Freq);
 void Write_Amplitude(uint8_t Channel, uint16_t Ampli);
 void Write_Phase(uint8_t Channel, uint16_t Phase);
+void Write_FrequenceU(uint8_t Channel, uint32_t Freq);
+void Write_AmplitudeU(uint8_t Channel, uint16_t Ampli);
+void Write_PhaseU(uint8_t Channel, uint16_t Phase);
 
 uint32_t Get_Freq(void);
 uint8_t Get_Amp(void);
