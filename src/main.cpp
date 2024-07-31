@@ -16,7 +16,9 @@
 
 extern "C" {
 #include <ad9959.h>
+#include <PE43xx.h>
 }
+
 extern void Error_Handler(void);
 
 /* Private variables ---------------------------------------------------------*/
@@ -382,7 +384,7 @@ void ec11Add() {
 			break;
 		case 6:
 			if (prog_sd_attenuation < 20) {
-				prog_sd_attenuation += 1;
+				prog_sd_attenuation += 2;
 			}
 			break;
 		case 7:
@@ -454,7 +456,7 @@ void ec11Minus() {
 			break;
 		case 6:
 			if (prog_sd_attenuation > 0) {
-				prog_sd_attenuation -= 1;
+				prog_sd_attenuation -= 2;
 			}
 			break;
 		case 7:
@@ -505,6 +507,8 @@ void progUPDATE() {
 	// Write_Amplitude(3, prog_sd_attenuation);
 	// // setDacOutput(DAC_CHANNEL_1, 2048);
 	setAD9959();
+	//PE4302_0_Set((uint8_t)prog_sd_attenuation);
+	//PE43xx_changelevel((float)prog_sd_attenuation);
 }
 
 void setAD9959() {
@@ -656,7 +660,10 @@ extern "C" int main(void) {
 	// IO_Update(); // AD9959更新数据,调用此函数后，上述操作生效！！！！
 
 	Init_AD9959();
-	setAD9959();
+	// PE_GPIO_Init();
+	// PE4302_0_Set((uint8_t)prog_sd_attenuation);
+	//PE43xx_init(PE4302,16);
+	progUPDATE();
 	while (1) {
 		displaySelectRow();
 		displayProgInfo();
