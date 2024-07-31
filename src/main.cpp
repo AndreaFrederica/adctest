@@ -14,7 +14,6 @@
 #include <string>
 #include <tools.h>
 
-
 extern "C" {
 #include <ad9959.h>
 }
@@ -172,7 +171,6 @@ static void MX_DMA_Init(void) {
 	HAL_NVIC_EnableIRQ(DMA2_Stream1_IRQn); // 使能 DMA2 Stream1 中断
 }
 
-
 DAC_HandleTypeDef hdac;
 
 void DAC_Init(void) {
@@ -321,25 +319,23 @@ void drawSelectLine(Spirit obj) {
 typedef enum { AM, CW } Enum_prog_output_mode;
 
 int prog_output_mode = AM;
-int prog_sd_val = 100;                //? 100mV
-int prog_am_range = 30;               //? 30%
-int prog_sd_delay = 50;               //? 50ns
-int prog_sd_attenuation = 0;          //?dB
-int prog_wireless_fc_freq = 30;       //? Mhz
-int prog_wireless_sd_val = 100;       //? mV
-int prog_wireless_am_range = 30;      //? 30%
-int prog_wireless_sd_delay = 50;      //? 50ns
-int prog_wireless_sd_attenuation = 0; //?dB
-int prog_wireless_sm_phase = 0;       //? deg
+int prog_voltage = 100;         //? 100mV
+int prog_amj = 30;              //? 30%
+int prog_sd_delay = 50;         //? 50ns
+int prog_sd_attenuation = 0;    //?dB
+int prog_freq = 2;              //? Mhz
+int prog_dm_phase = 0;          //? deg
+int prog_wireless_sm_phase = 0; //? deg
 
 int select_y = 0;
 bool flag_edit_mode = false;
 
 void initSelectRow(bool update) {
-	for (int i = 1; i <= 5; i++) {
+	for (int i = 1; i <= 4; i++) {
 		SetChar(i, 0, ' ', BLACK, WHITE);
 	}
-	for (int i = 7; i <= 12; i++) {
+	SetChar(6, 0, ' ', BLACK, WHITE);
+	for (int i = 8; i <= 10; i++) {
 		SetChar(i, 0, ' ', BLACK, WHITE);
 	}
 	if (update) {
@@ -358,58 +354,58 @@ void ec11Add() {
 			}
 			break;
 		case 1:
-			if (prog_sd_val < 1000) {
-				prog_sd_val += 100;
+			if (prog_voltage < 1000) {
+				prog_voltage += 100;
 			}
 			break;
 		case 2:
-			if (prog_am_range < 90) {
-				prog_am_range += 10;
+			if (prog_freq < 40) {
+				prog_freq += 1;
 			}
 			break;
 		case 3:
+			if (prog_amj < 90) {
+				prog_amj += 10;
+			}
+			break;
+		case 4:
+			if (prog_dm_phase < 180) {
+				prog_dm_phase += 30;
+			}
+			break;
+		case 5:
 			if (prog_sd_delay < 200) {
 				prog_sd_delay += 30;
 			}
 			break;
-		case 4:
-			if (prog_sd_attenuation < 20) {
-				prog_sd_attenuation += 2;
-			}
-			break;
-		case 5:
-			if (prog_wireless_fc_freq < 40) {
-				prog_wireless_fc_freq += 1;
-			}
-			break;
 		case 6:
-			if (prog_wireless_sd_val < 1000) {
-				prog_wireless_sd_val += 100;
+			if (prog_sd_attenuation < 20) {
+				prog_sd_attenuation += 1;
 			}
 			break;
 		case 7:
-			if (prog_wireless_am_range < 90) {
-				prog_wireless_am_range += 10;
-			}
-			break;
-		case 8:
-			if (prog_wireless_sd_delay < 200) {
-				prog_wireless_sd_delay += 30;
-			}
-			break;
-		case 9:
-			if (prog_wireless_sd_attenuation < 20) {
-				prog_wireless_sd_attenuation += 2;
-			}
-			break;
-		case 10:
 			if (prog_wireless_sm_phase < 180) {
-				prog_wireless_sm_phase += 10;
+				prog_wireless_sm_phase += 30;
 			}
+			break;
+			// case 8:
+			// 	if (prog_wireless_sd_delay < 200) {
+			// 		prog_wireless_sd_delay += 30;
+			// 	}
+			// 	break;
+			// case 9:
+			// 	if (prog_wireless_sd_attenuation < 20) {
+			// 		prog_wireless_sd_attenuation += 2;
+			// 	}
+			// 	break;
+			// case 10:
+			// 	if (prog_wireless_sm_phase < 180) {
+			// 		prog_wireless_sm_phase += 10;
+			// 	}
 			break;
 		}
 	} else {
-		if (select_y >= 10) {
+		if (select_y >= 7) {
 			select_y = 0;
 		} else {
 			select_y++;
@@ -428,59 +424,44 @@ void ec11Minus() {
 			}
 			break;
 		case 1:
-			if (prog_sd_val > 100) {
-				prog_sd_val -= 100;
+			if (prog_voltage > 100) {
+				prog_voltage -= 100;
 			}
 			break;
 		case 2:
-			if (prog_am_range > 30) {
-				prog_am_range -= 10;
+			if (prog_freq > 30) {
+				prog_freq -= 1;
 			}
 			break;
 		case 3:
+			if (prog_amj > 30) {
+				prog_amj -= 10;
+			}
+			break;
+		case 4:
+			if (prog_dm_phase > 0) {
+				prog_dm_phase -= 30;
+			}
+			break;
+		case 5:
 			if (prog_sd_delay > 50) {
 				prog_sd_delay -= 30;
 			}
 			break;
-		case 4:
-			if (prog_sd_attenuation > 0) {
-				prog_sd_attenuation -= 2;
-			}
-			break;
-		case 5:
-			if (prog_wireless_fc_freq > 30) {
-				prog_wireless_fc_freq -= 1;
-			}
-			break;
 		case 6:
-			if (prog_wireless_sd_val > 100) {
-				prog_wireless_sd_val -= 100;
+			if (prog_sd_attenuation > 0) {
+				prog_sd_attenuation -= 1;
 			}
 			break;
 		case 7:
-			if (prog_wireless_am_range > 30) {
-				prog_wireless_am_range -= 10;
-			}
-			break;
-		case 8:
-			if (prog_wireless_sd_delay > 50) {
-				prog_wireless_sd_delay -= 30;
-			}
-			break;
-		case 9:
-			if (prog_wireless_sd_attenuation > 0) {
-				prog_wireless_sd_attenuation -= 2;
-			}
-			break;
-		case 10:
 			if (prog_wireless_sm_phase > 0) {
-				prog_wireless_sm_phase -= 10;
+				prog_wireless_sm_phase -= 30;
 			}
 			break;
 		}
 	} else {
 		if (select_y <= 0) {
-			select_y = 11;
+			select_y = 7;
 		} else {
 			select_y--;
 		}
@@ -494,15 +475,18 @@ void ec11Click() {
 	} else {
 		flag_edit_mode = true;
 	}
-	//uart_log_debug("EC11_Enter!"); // 按下确认键
+	// uart_log_debug("EC11_Enter!"); // 按下确认键
 }
 
-void progUPDATE(){
+void progUPDATE() {
 	// AD9959_Set_Fre(CH0, prog_wireless_fc_freq * 10000);
-	Write_Frequence(0,prog_wireless_fc_freq * 10000);
+	Write_Frequence(0, prog_freq * 1000000);
 	// IO_Update();
-	setDacOutput(DAC_CHANNEL_1,2040 * prog_am_range / 100);
-	//setDacOutput(DAC_CHANNEL_1, 2048);
+	setDacOutput(DAC_CHANNEL_1, 2040 * prog_amj / 100);
+	Write_Phase(0, prog_wireless_sm_phase);
+	Write_Amplitude(2, prog_sd_attenuation);
+	Write_Amplitude(3, prog_sd_attenuation);
+	// setDacOutput(DAC_CHANNEL_1, 2048);
 }
 
 extern "C" int main(void) {
@@ -527,10 +511,10 @@ extern "C" int main(void) {
 	uart_log_info("init dac");
 	DAC_Init();
 	initDacOutput();
-	setDacOutput(DAC_CHANNEL_1,2040 * prog_am_range / 100); //! PA4 CH2是PA5
+	setDacOutput(DAC_CHANNEL_1, 2040 * prog_amj / 100); //! PA4 CH2是PA5
 	uart_log_info("init ec11");
-	usedEc11Add = ec11Add;
-	usedEc11Minus = ec11Minus;
+	usedEc11Add = ec11Minus;
+	usedEc11Minus = ec11Add; //? 反过来直觉一点
 	usedEc11Click = ec11Click;
 	EC11_Init();
 	uart_log_info("init spi1");
@@ -548,19 +532,19 @@ extern "C" int main(void) {
 	lcd_print_init(WHITE, BLACK, RETURN_TO_ORIGIN);
 
 	//? 绘制屏幕 变量在pos 20开始
-	lcd_print("             Title        ");
+	lcd_print("                [Public]        ");
 	lcd_print("  Mode              XX");
-	lcd_print("  SD Val            0100mV");
-	lcd_print("  AM Range          30%");
-	lcd_print("  SM Delay          050ns");
-	lcd_print("     Attenuation    00bB");
-	lcd_print("++++++++++Wireless++++++++++");
-	lcd_print("  Fc Freq           30MHz");
-	lcd_print("  SD Val            0100mV");
-	lcd_print("  AM Range          30%");
-	lcd_print("  SM Delay          050ns");
-	lcd_print("     Attenuation    00bB");
-	lcd_print("     Phase          0");
+	lcd_print("  Voltage           100mV");
+	lcd_print("  Frequency         30Mhz");
+	lcd_print("  AMJ               30%");
+	lcd_print("                [Direct]");
+	lcd_print("  D_Phase           0Deg");
+	lcd_print("               [Multiple]");
+	lcd_print("  Delay             50ns");
+	lcd_print("  Attenuation       0dB");
+	lcd_print("  M_Phase           0Deg");
+	lcd_print("  ");
+	lcd_print("CUI MODE            XXXXXX");
 
 	initSelectRow(true);
 	// uart_log_info("init dma");
@@ -589,31 +573,31 @@ extern "C" int main(void) {
 	// AD9959_Set_Amp(CH3, 1023); // 设置通道3幅度控制值1023，范围0~1023
 
 	// AD9959_Set_Phase(CH0, 0); // 设置通道0相位控制值0(0度)，范围0~16383
-	// AD9959_Set_Phase(CH1, 4096); // 设置通道1相位控制值4096(90度)，范围0~16383
-	// AD9959_Set_Phase(CH2, 8192); // 设置通道2相位控制值8192(180度)，范围0~16383
-	// AD9959_Set_Phase(CH3,
+	// AD9959_Set_Phase(CH1, 4096); //
+	// 设置通道1相位控制值4096(90度)，范围0~16383 AD9959_Set_Phase(CH2, 8192);
+	// // 设置通道2相位控制值8192(180度)，范围0~16383 AD9959_Set_Phase(CH3,
 	//                  12288); // 设置通道3相位控制值12288(270度)，范围0~16383
 	// IO_Update(); // AD9959更新数据,调用此函数后，上述操作生效！！！！
 
 	Init_AD9959();
-	Write_Frequence(0,100000);
-	Write_Frequence(1,200000);
-	Write_Frequence(2,300000);
-	Write_Frequence(3,400000);
-	Write_Amplitude(0,1023);
-	Write_Amplitude(1,1023);
-	Write_Amplitude(2,1023);
-	Write_Amplitude(3,1023);
-	Write_Phase(0,0);
-	Write_Phase(1,4096);
-	Write_Phase(2,8192);
-	Write_Phase(3,12288);
+	Write_Frequence(0, prog_freq * 1000000); //?无线载波频率 可调 SM信号
+	Write_Frequence(1, 2000000);             //?
+	Write_Frequence(2, 2000000);             //? 2M载波
+	Write_Frequence(3, 2000000);
+	Write_Amplitude(0, 1023);
+	Write_Amplitude(1, 1023);
+	// Write_Amplitude(2,prog_sd_val * 100); //? 载波有效值
+	Write_Amplitude(2, prog_sd_attenuation); //? 载波有效值
+	Write_Amplitude(3, prog_sd_attenuation);
+	Write_Phase(0, prog_wireless_sm_phase); //? SM信号相位
+	Write_Phase(0, 0);                      //? SM信号相位
+	Write_Phase(3, 0);
 	while (1) {
 		displaySelectRow();
 		displayProgInfo();
 
-		//HAL_Delay(10);
-		//blue_led.blink(10);
+		// HAL_Delay(10);
+		// blue_led.blink(10);
 	}
 }
 
@@ -637,26 +621,26 @@ void displaySelectRow() {
 		SetChar(4, 0, SelectedCursor, fg_color, bg_color);
 		break;
 	case 4:
-		SetChar(5, 0, SelectedCursor, fg_color, bg_color);
+		SetChar(6, 0, SelectedCursor, fg_color, bg_color);
 		break;
 	case 5:
-		SetChar(7, 0, SelectedCursor, fg_color, bg_color);
-		break;
-	case 6:
 		SetChar(8, 0, SelectedCursor, fg_color, bg_color);
 		break;
-	case 7:
+	case 6:
 		SetChar(9, 0, SelectedCursor, fg_color, bg_color);
 		break;
-	case 8:
+	case 7:
 		SetChar(10, 0, SelectedCursor, fg_color, bg_color);
 		break;
-	case 9:
-		SetChar(11, 0, SelectedCursor, fg_color, bg_color);
-		break;
-	case 10:
-		SetChar(12, 0, SelectedCursor, fg_color, bg_color);
-		break;
+		// case 8:
+		// 	SetChar(10, 0, SelectedCursor, fg_color, bg_color);
+		// 	break;
+		// case 9:
+		// 	SetChar(11, 0, SelectedCursor, fg_color, bg_color);
+		// 	break;
+		// case 10:
+		// 	SetChar(12, 0, SelectedCursor, fg_color, bg_color);
+		// 	break;
 
 	default:
 		break;
@@ -667,7 +651,7 @@ void displaySelectRow() {
 void displayProgInfo() {
 	uint16_t fg_color = WHITE;
 	uint16_t bg_color = BLACK;
-	char buffer[20] = {0};
+	char buffer[30] = {0};
 	auto createString = [](int flag) -> const char* {
 		if (flag == AM) {
 			return "AM";
@@ -677,53 +661,58 @@ void displayProgInfo() {
 	};
 	lcd_setString(1, 20, fg_color, bg_color, createString(prog_output_mode));
 	strcpy(buffer, "");
-	sprintf(buffer, "%dmV", prog_sd_val);
+	sprintf(buffer, "%dmV", prog_voltage);
 	lcd_setString(2, 20, WHITE, BLACK, "           ");
 	lcd_setString(2, 20, fg_color, bg_color, buffer);
 	strcpy(buffer, "");
-	sprintf(buffer, "%d%%", prog_am_range);
+	sprintf(buffer, "%dMhz", prog_freq);
 	lcd_setString(3, 20, WHITE, BLACK, "           ");
 	lcd_setString(3, 20, fg_color, bg_color, buffer);
 	strcpy(buffer, "");
+	sprintf(buffer, "%d%%", prog_amj);
+	if (prog_output_mode == AM) {
+		lcd_setString(4, 2, WHITE, BLACK, "AMJ                                    ");
+		lcd_setString(4, 20, fg_color, bg_color, buffer);
+	} else {
+		lcd_setString(4, 2, WHITE, GRAY, "AMJ                                     ");
+		lcd_setString(4, 20, fg_color, GRAY, buffer);
+	}
+	strcpy(buffer, "");
+	sprintf(buffer, "%dDeg", prog_dm_phase);
+	lcd_setString(6, 20, WHITE, BLACK, "           ");
+	lcd_setString(6, 20, fg_color, bg_color, buffer);
+	strcpy(buffer, "");
 	sprintf(buffer, "%dns", prog_sd_delay);
-	lcd_setString(4, 20, WHITE, BLACK, "           ");
-	lcd_setString(4, 20, fg_color, bg_color, buffer);
-	strcpy(buffer, "");
-	sprintf(buffer, "%ddB", prog_sd_attenuation);
-	lcd_setString(5, 20, WHITE, BLACK, "           ");
-	lcd_setString(5, 20, fg_color, bg_color, buffer);
-	strcpy(buffer, "");
-	sprintf(buffer, "%dMHz", prog_wireless_fc_freq);
-	lcd_setString(7, 20, WHITE, BLACK, "           ");
-	lcd_setString(7, 20, fg_color, bg_color, buffer);
-	strcpy(buffer, "");
-	sprintf(buffer, "%dmV", prog_wireless_sd_val);
 	lcd_setString(8, 20, WHITE, BLACK, "           ");
 	lcd_setString(8, 20, fg_color, bg_color, buffer);
 	strcpy(buffer, "");
-	sprintf(buffer, "%d%%", prog_wireless_am_range);
+	sprintf(buffer, "%ddB", prog_sd_attenuation);
 	lcd_setString(9, 20, WHITE, BLACK, "           ");
 	lcd_setString(9, 20, fg_color, bg_color, buffer);
 	strcpy(buffer, "");
-	sprintf(buffer, "%dns", prog_wireless_sd_delay);
+	sprintf(buffer, "%dDeg", prog_wireless_sm_phase);
 	lcd_setString(10, 20, WHITE, BLACK, "           ");
 	lcd_setString(10, 20, fg_color, bg_color, buffer);
-	strcpy(buffer, "");
-	sprintf(buffer, "%ddB", prog_wireless_sd_attenuation);
-	lcd_setString(11, 20, WHITE, BLACK, "           ");
-	lcd_setString(11, 20, fg_color, bg_color, buffer);
-	strcpy(buffer, "");
-	sprintf(buffer, "%d", prog_wireless_sm_phase);
-	lcd_setString(12, 20, WHITE, BLACK, "           ");
-	lcd_setString(12, 20, fg_color, bg_color, buffer);
+	// strcpy(buffer, "");
+	// sprintf(buffer, "%dns", prog_wireless_sd_delay);
+	// lcd_setString(10, 20, WHITE, BLACK, "           ");
+	// lcd_setString(10, 20, fg_color, bg_color, buffer);
+	// strcpy(buffer, "");
+	// sprintf(buffer, "%ddB", prog_wireless_sd_attenuation);
+	// lcd_setString(11, 20, WHITE, BLACK, "           ");
+	// lcd_setString(11, 20, fg_color, bg_color, buffer);
+	// strcpy(buffer, "");
+	// sprintf(buffer, "%d", prog_wireless_sm_phase);
+	// lcd_setString(12, 20, WHITE, BLACK, "           ");
+	// lcd_setString(12, 20, fg_color, bg_color, buffer);
 	strcpy(buffer, "");
 	fg_color = BLACK;
 	bg_color = WHITE;
 	if (flag_edit_mode) {
 		bg_color = RED;
-		lcd_setString(0, 0, WHITE, BLACK, " EDIT ");
+		lcd_setString(12, 20, WHITE, BLACK, "EDIT  ");
 	} else {
-		lcd_setString(0, 0, WHITE, BLACK, "NORMAL");
+		lcd_setString(12, 20, WHITE, BLACK, "NORMAL");
 	}
 	switch (select_y) {
 	case 0:
@@ -731,45 +720,49 @@ void displayProgInfo() {
 		              createString(prog_output_mode));
 		break;
 	case 1:
-		sprintf(buffer, "%dmV", prog_sd_val);
+		sprintf(buffer, "%dmV", prog_voltage);
 		lcd_setString(2, 20, fg_color, bg_color, buffer);
 		break;
 	case 2:
-		sprintf(buffer, "%d%%", prog_am_range);
+		sprintf(buffer, "%dMhz", prog_freq);
 		lcd_setString(3, 20, fg_color, bg_color, buffer);
 		break;
 	case 3:
-		sprintf(buffer, "%dns", prog_sd_delay);
-		lcd_setString(4, 20, fg_color, bg_color, buffer);
+		if (prog_output_mode == AM) {
+			sprintf(buffer, "%d%%", prog_amj);
+			lcd_setString(4, 20, fg_color, bg_color, buffer);
+		} else {
+			lcd_setString(4, 20, fg_color, GRAY, buffer);
+		}
 		break;
 	case 4:
-		sprintf(buffer, "%ddB", prog_sd_attenuation);
-		lcd_setString(5, 20, fg_color, bg_color, buffer);
+		sprintf(buffer, "%dDeg", prog_dm_phase);
+		lcd_setString(6, 20, fg_color, bg_color, buffer);
 		break;
 	case 5:
-		sprintf(buffer, "%dMHz", prog_wireless_fc_freq);
-		lcd_setString(7, 20, fg_color, bg_color, buffer);
-		break;
-	case 6:
-		sprintf(buffer, "%dmV", prog_wireless_sd_val);
+		sprintf(buffer, "%dns", prog_sd_delay);
 		lcd_setString(8, 20, fg_color, bg_color, buffer);
 		break;
-	case 7:
-		sprintf(buffer, "%d%%", prog_wireless_am_range);
+	case 6:
+		sprintf(buffer, "%ddB", prog_sd_attenuation);
 		lcd_setString(9, 20, fg_color, bg_color, buffer);
 		break;
-	case 8:
-		sprintf(buffer, "%dns", prog_wireless_sd_delay);
+	case 7:
+		sprintf(buffer, "%dDeg", prog_wireless_sm_phase);
 		lcd_setString(10, 20, fg_color, bg_color, buffer);
 		break;
-	case 9:
-		sprintf(buffer, "%ddB", prog_wireless_sd_attenuation);
-		lcd_setString(11, 20, fg_color, bg_color, buffer);
-		break;
-	case 10:
-		sprintf(buffer, "%d", prog_wireless_sm_phase);
-		lcd_setString(12, 20, fg_color, bg_color, buffer);
-		break;
+		// case 8:
+		// 	sprintf(buffer, "%dns", prog_wireless_sd_delay);
+		// 	lcd_setString(10, 20, fg_color, bg_color, buffer);
+		// 	break;
+		// case 9:
+		// 	sprintf(buffer, "%ddB", prog_wireless_sd_attenuation);
+		// 	lcd_setString(11, 20, fg_color, bg_color, buffer);
+		// 	break;
+		// case 10:
+		// 	sprintf(buffer, "%d", prog_wireless_sm_phase);
+		// 	lcd_setString(12, 20, fg_color, bg_color, buffer);
+		// 	break;
 	}
 	UpdateScreen();
 }
