@@ -1,3 +1,11 @@
+/*
+ * @Author: AndreaFrederica andreafrederica@outlook.com
+ * @Date: 2024-07-30 22:56:37
+ * @LastEditors: AndreaFrederica andreafrederica@outlook.com
+ * @LastEditTime: 2024-07-31 09:48:27
+ * @FilePath: \adctest\lib\AD9959\AD9959.h
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 #ifndef __AD9959_H
 #define __AD9959_H
 
@@ -23,6 +31,34 @@ typedef struct
     GPIO_TypeDef *GPIOx;
     uint32_t Pin;
 } driverIO;
+
+// 定义 GPIOE 引脚
+#define SDIO1_Pin GPIO_PIN_8
+#define SDIO1_GPIO_Port GPIOD
+#define SDIO2_Pin GPIO_PIN_9
+#define SDIO2_GPIO_Port GPIOD
+#define SDIO3_Pin GPIO_PIN_10
+#define SDIO3_GPIO_Port GPIOD
+#define PDC_Pin GPIO_PIN_11
+#define PDC_GPIO_Port GPIOD
+#define RESET_Pin GPIO_PIN_14
+#define RESET_GPIO_Port GPIOD
+#define SCLK_Pin GPIO_PIN_0
+#define SCLK_GPIO_Port GPIOD
+#define CS_Pin GPIO_PIN_1
+#define CS_GPIO_Port GPIOD
+#define UPDATE_Pin GPIO_PIN_2
+#define UPDATE_GPIO_Port GPIOD
+#define SDIO0_Pin GPIO_PIN_3
+#define SDIO0_GPIO_Port GPIOD
+#define PS0_Pin GPIO_PIN_4
+#define PS0_GPIO_Port GPIOD
+#define PS1_Pin GPIO_PIN_5
+#define PS1_GPIO_Port GPIOD
+#define PS2_Pin GPIO_PIN_6
+#define PS2_GPIO_Port GPIOD
+#define PS3_Pin GPIO_PIN_7
+#define PS3_GPIO_Port GPIOD
 
 extern driverIO SDIO0;
 extern driverIO SDIO1;

@@ -90,10 +90,10 @@ extern uint16_t  BACK_COLOR;  // 背景颜色.默认为白色
 ////////////////////////////////////////////////////////////////////
 //-----------------LCD端口定义----------------
 
-#define P_LED 13 // 背光控制引脚
-#define P_CS 15  // 片选引脚
-#define P_RS 14  // 寄存器/数据选择引脚
-#define P_RST 12 // 复位引脚
+#define P_LED 6 // 背光控制引脚
+#define P_CS 7  // 片选引脚
+#define P_RS 8  // 寄存器/数据选择引脚
+#define P_RST 9 // 复位引脚
 
 // QDtech全系列模块采用了三极管控制背光亮灭，用户也可以接PWM调节背光亮度
 #define LCD_LED PBout(P_LED) // LCD背光

@@ -499,6 +499,7 @@ void ec11Click() {
 
 void progUPDATE(){
 	// AD9959_Set_Fre(CH0, prog_wireless_fc_freq * 10000);
+	Write_Frequence(0,prog_wireless_fc_freq * 10000);
 	// IO_Update();
 	setDacOutput(DAC_CHANNEL_1,2040 * prog_am_range / 100);
 	//setDacOutput(DAC_CHANNEL_1, 2048);

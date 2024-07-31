@@ -2,36 +2,6 @@
 
 // #define AD9959_LED
 
-// 定义 GPIOE 引脚
-#define SDIO0_Pin GPIO_PIN_0
-#define SDIO0_GPIO_Port GPIOE
-#define SDIO1_Pin GPIO_PIN_1
-#define SDIO1_GPIO_Port GPIOE
-#define SDIO2_Pin GPIO_PIN_2
-#define SDIO2_GPIO_Port GPIOE
-#define SDIO3_Pin GPIO_PIN_3
-#define SDIO3_GPIO_Port GPIOE
-
-#define PDC_Pin GPIO_PIN_4
-#define PDC_GPIO_Port GPIOE
-#define RESET_Pin GPIO_PIN_5
-#define RESET_GPIO_Port GPIOE
-#define SCLK_Pin GPIO_PIN_6
-#define SCLK_GPIO_Port GPIOE
-#define CS_Pin GPIO_PIN_7
-#define CS_GPIO_Port GPIOE
-#define UPDATE_Pin GPIO_PIN_8
-#define UPDATE_GPIO_Port GPIOE
-
-#define PS0_Pin GPIO_PIN_9
-#define PS0_GPIO_Port GPIOE
-#define PS1_Pin GPIO_PIN_10
-#define PS1_GPIO_Port GPIOE
-#define PS2_Pin GPIO_PIN_11
-#define PS2_GPIO_Port GPIOE
-#define PS3_Pin GPIO_PIN_12
-#define PS3_GPIO_Port GPIOE
-
 // Forced IO definitions
 driverIO SDIO0 = {SDIO0_GPIO_Port, SDIO0_Pin};
 driverIO SDIO1 = {SDIO1_GPIO_Port, SDIO1_Pin};
@@ -75,26 +45,46 @@ void MX_AD9959_GPIO_Init(void) {
 	// 启用 GPIOE 时钟
 	__HAL_RCC_GPIOE_CLK_ENABLE();
 
-	// 配置软件SPI引脚
-	GPIO_InitStruct.Pin = SDIO0_Pin | SDIO1_Pin | SDIO2_Pin | SDIO3_Pin |
-	                      SCLK_Pin | CS_Pin | UPDATE_Pin;
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStruct.Pull = GPIO_PULLUP;                // 上拉电阻
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH; // 使用 Low 速度
-	HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+	// // 配置软件SPI引脚
+	// GPIO_InitStruct.Pin = SDIO0_Pin | SDIO1_Pin | SDIO2_Pin | SDIO3_Pin |
+	//                       SCLK_Pin | CS_Pin | UPDATE_Pin;
+	// GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	// GPIO_InitStruct.Pull = GPIO_PULLUP;                // 上拉电阻
+	// GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH; // 使用 Low 速度
+	// HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-	// 配置其他控制引脚
-	GPIO_InitStruct.Pin =
-	    PDC_Pin | RESET_Pin | PS0_Pin | PS1_Pin | PS2_Pin | PS3_Pin;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW; // 使用 Low 速度
-	HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+	// // 配置其他控制引脚
+	// GPIO_InitStruct.Pin =
+	//     PDC_Pin | RESET_Pin | PS0_Pin | PS1_Pin | PS2_Pin | PS3_Pin;
+	// GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW; // 使用 Low 速度
+	// HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
-	// 额外配置: 默认所有引脚为高电平
-	HAL_GPIO_WritePin(GPIOE,
-	                  SDIO0_Pin | SDIO1_Pin | SDIO2_Pin | SDIO3_Pin | SCLK_Pin |
-	                      CS_Pin | UPDATE_Pin | PDC_Pin | RESET_Pin | PS0_Pin |
+	// // 额外配置: 默认所有引脚为高电平
+	// HAL_GPIO_WritePin(GPIOE,
+	//                   SDIO0_Pin | SDIO1_Pin | SDIO2_Pin | SDIO3_Pin |
+	//                   SCLK_Pin |
+	//                       CS_Pin | UPDATE_Pin | PDC_Pin | RESET_Pin | PS0_Pin
+	//                       | PS1_Pin | PS2_Pin | PS3_Pin,
+	//                   GPIO_PIN_SET);
+
+	/*Configure GPIO pin Output Level */
+	HAL_GPIO_WritePin(GPIOD,
+	                  SDIO1_Pin | SDIO2_Pin | SDIO3_Pin | PDC_Pin | RESET_Pin |
+	                      SCLK_Pin | CS_Pin | UPDATE_Pin | SDIO0_Pin | PS0_Pin |
 	                      PS1_Pin | PS2_Pin | PS3_Pin,
-	                  GPIO_PIN_SET);
+	                  GPIO_PIN_RESET);
+
+	/*Configure GPIO pins : PDPin PDPin PDPin PDPin
+	                         PDPin PDPin PDPin PDPin
+	                         PDPin PDPin PDPin PDPin
+	                         PDPin */
+	GPIO_InitStruct.Pin = SDIO1_Pin | SDIO2_Pin | SDIO3_Pin | PDC_Pin |
+	                      RESET_Pin | SCLK_Pin | CS_Pin | UPDATE_Pin |
+	                      SDIO0_Pin | PS0_Pin | PS1_Pin | PS2_Pin | PS3_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+	HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 }
 
 /**
