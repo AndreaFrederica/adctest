@@ -15,8 +15,9 @@
 #include <tools.h>
 
 extern "C" {
+//#include <PE43xx.h>
 #include <ad9959.h>
-#include <PE43xx.h>
+
 }
 
 extern void Error_Handler(void);
@@ -507,8 +508,8 @@ void progUPDATE() {
 	// Write_Amplitude(3, prog_sd_attenuation);
 	// // setDacOutput(DAC_CHANNEL_1, 2048);
 	setAD9959();
-	//PE4302_0_Set((uint8_t)prog_sd_attenuation);
-	//PE43xx_changelevel((float)prog_sd_attenuation);
+	// PE4302_0_Set((uint8_t)prog_sd_attenuation);
+	// PE43xx_changelevel((float)prog_sd_attenuation);
 }
 
 void setAD9959() {
@@ -557,7 +558,7 @@ void setAD9959() {
 	// TODO 关闭全部两个通道（直通和多径）
 	// TODO 打开直通输出
 	int ch_sm_phase = 0;
-		ch_sm_phase = prog_dm_phase + prog_wireless_sm_phase;
+	ch_sm_phase = prog_dm_phase + prog_wireless_sm_phase;
 	if (ch_sm_phase < 0)
 		ch_sm_phase += 360;
 	if (ch_sm_phase > 360)
@@ -569,6 +570,7 @@ void setAD9959() {
 	Write_Phase(2, ch_sm_phase);
 }
 
+//TODO TAG MAIN
 extern "C" int main(void) {
 
 	HAL_Init(); // 初始化 HAL 库
@@ -640,35 +642,11 @@ extern "C" int main(void) {
 	uart_log_success("init done");
 	uart_print("hello world");
 
-	// AD9959_Init();
-
-	// AD9959_Set_Fre(CH0, 1000); // 设置通道0频率100000Hz
-	// AD9959_Set_Fre(CH1, 200000); // 设置通道1频率100000Hz
-	// AD9959_Set_Fre(CH2, 300000); // 设置通道2频率100000Hz
-	// AD9959_Set_Fre(CH3, 400000); // 设置通道3频率100000Hz
-
-	// AD9959_Set_Amp(CH0, 1023); // 设置通道0幅度控制值1023，范围0~1023
-	// AD9959_Set_Amp(CH1, 1023); // 设置通道1幅度控制值1023，范围0~1023
-	// AD9959_Set_Amp(CH2, 1023); // 设置通道2幅度控制值1023，范围0~1023
-	// AD9959_Set_Amp(CH3, 1023); // 设置通道3幅度控制值1023，范围0~1023
-
-	// AD9959_Set_Phase(CH0, 0); // 设置通道0相位控制值0(0度)，范围0~16383
-	// AD9959_Set_Phase(CH1, 4096); //
-	// 设置通道1相位控制值4096(90度)，范围0~16383 AD9959_Set_Phase(CH2, 8192);
-	// // 设置通道2相位控制值8192(180度)，范围0~16383 AD9959_Set_Phase(CH3,
-	//                  12288); // 设置通道3相位控制值12288(270度)，范围0~16383
-	// IO_Update(); // AD9959更新数据,调用此函数后，上述操作生效！！！！
-
 	Init_AD9959();
-	// PE_GPIO_Init();
-	// PE4302_0_Set((uint8_t)prog_sd_attenuation);
-	//PE43xx_init(PE4302,16);
 	progUPDATE();
 	while (1) {
 		displaySelectRow();
 		displayProgInfo();
-		// HAL_Delay(10);
-		// blue_led.blink(10);
 	}
 }
 
@@ -837,6 +815,9 @@ void displayProgInfo() {
 		// 	lcd_setString(12, 20, fg_color, bg_color, buffer);
 		// 	break;
 	}
+	lcdPrintConfig.cursorY = 208;
+	lcdPrintConfig.cursorX = 0;
+	lcd_log_debug("debug mode test");
 	UpdateScreen();
 }
 
