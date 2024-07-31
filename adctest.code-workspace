@@ -166,6 +166,13 @@
 			"yerr",
 			"Ypos",
 			"Zhen"
-		]
+		],
+		"files.associations": {
+			"*.html": "html",
+			"*.java": "java",
+			"*.log": "log",
+			"*.h": "cpp",
+			"PE4302.C": "cpp"
+		}
 	}
 }
